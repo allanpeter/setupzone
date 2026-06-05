@@ -32,6 +32,16 @@ export const getFeaturedProducts = cache((limit = 4) =>
   }),
 );
 
+/** Active (published) products, newest first. */
+export const getActiveProducts = cache((limit = PAGE_SIZE) =>
+  db.product.findMany({
+    where: { status: "PUBLISHED" },
+    select: productCardSelect,
+    orderBy: { createdAt: "desc" },
+    take: limit,
+  }),
+);
+
 export const getTrendingProducts = cache((limit = 8) =>
   db.product.findMany({
     where: { status: "PUBLISHED", isTrending: true },
