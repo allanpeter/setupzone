@@ -1,0 +1,475 @@
+// SetupZone — Prisma schema
+// Affiliate product catalog + content platform (pt-BR).
+// Prisma 7 "prisma-client" generator (Rust-free) + pg driver adapter.
+
+generator client {
+  provider     = "prisma-client"
+  output       = "../src/generated/prisma"
+  moduleFormat = "cjs"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+// ─────────────────────────────────────────────────────────────────────────
+// Enums
+// ─────────────────────────────────────────────────────────────────────────
+
+enum ContentStatus {
+  DRAFT
+  PUBLISHED
+  ARCHIVED
+}
+
+enum Currency {
+  BRL
+  USD
+}
+
+enum SeoEntityType {
+  PRODUCT
+  BUILD
+  COMPARISON
+  BLOG_POST
+  CATEGORY
+  PAGE
+}
+
+// ─────────────────────────────────────────────────────────────────────────
+// Auth (Better Auth core models + role)
+// ─────────────────────────────────────────────────────────────────────────
+
+model User {
+  id            String    @id @default(cuid())
+  name          String
+  email         String    @unique
+  emailVerified Boolean   @default(false)
+  image         String?
+  // "user" | "editor" | "admin" (Better Auth admin plugin convention)
+  role          String    @default("user")
+  // Better Auth admin plugin fields
+  banned        Boolean?  @default(false)
+  banReason     String?
+  banExpires    DateTime?
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  sessions   Session[]
+  accounts   Account[]
+  blogPosts  BlogPost[]
+
+  @@map("users")
+}
+
+model Session {
+  id        String   @id @default(cuid())
+  expiresAt DateTime
+  token     String   @unique
+  ipAddress String?
+  userAgent String?
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([userId])
+  @@map("sessions")
+}
+
+model Account {
+  id                    String    @id @default(cuid())
+  accountId             String
+  providerId            String
+  userId                String
+  user                  User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  accessToken           String?
+  refreshToken          String?
+  idToken               String?
+  accessTokenExpiresAt  DateTime?
+  refreshTokenExpiresAt DateTime?
+  scope                 String?
+  password              String?
+  createdAt             DateTime  @default(now())
+  updatedAt             DateTime  @updatedAt
+
+  @@index([userId])
+  @@map("accounts")
+}
+
+model Verification {
+  id         String   @id @default(cuid())
+  identifier String
+  value      String
+  expiresAt  DateTime
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  @@index([identifier])
+  @@map("verifications")
+}
+
+// ─────────────────────────────────────────────────────────────────────────
+// Catalog
+// ─────────────────────────────────────────────────────────────────────────
+
+model Brand {
+  id          String    @id @default(cuid())
+  slug        String    @unique
+  name        String
+  description String?
+  logoUrl     String?
+  websiteUrl  String?
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  products Product[]
+
+  @@map("brands")
+}
+
+model Category {
+  id          String     @id @default(cuid())
+  slug        String     @unique
+  name        String
+  description String?
+  iconUrl     String?
+  // Self-relation for subcategories
+  parentId    String?
+  parent      Category?  @relation("CategoryTree", fields: [parentId], references: [id], onDelete: SetNull)
+  children    Category[] @relation("CategoryTree")
+  displayOrder Int       @default(0)
+  createdAt   DateTime   @default(now())
+  updatedAt   DateTime   @updatedAt
+
+  products Product[] @relation("ProductCategories")
+
+  @@index([parentId])
+  @@map("categories")
+}
+
+model Store {
+  id            String   @id @default(cuid())
+  slug          String   @unique // aliexpress | shopee | mercadolivre | amazon
+  name          String
+  logoUrl       String?
+  brandColor    String?
+  // Default affiliate program tracking code / tag for this store.
+  trackingCode  String?
+  // Optional URL template, e.g. "{url}?aff_id={trackingCode}"
+  urlTemplate   String?
+  isActive      Boolean  @default(true)
+  displayOrder  Int      @default(0)
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  affiliateLinks AffiliateLink[]
+  prices         ProductPrice[]
+  clicks         AffiliateClick[]
+
+  @@map("stores")
+}
+
+model Product {
+  id              String        @id @default(cuid())
+  slug            String        @unique
+  name            String
+  shortDescription String?
+  description     String?       // long form, markdown/HTML
+  // Flexible specs: [{ "label": "CPU", "value": "Ryzen 5 5600" }, ...]
+  specs           Json          @default("[]")
+  status          ContentStatus @default(DRAFT)
+  isFeatured      Boolean       @default(false)
+  isTrending      Boolean       @default(false)
+  // Denormalised "best current price" for cheap sorting/listing (in BRL cents).
+  lowestPriceCents Int?
+  rating          Float?
+  brandId         String?
+  brand           Brand?        @relation(fields: [brandId], references: [id], onDelete: SetNull)
+  createdAt       DateTime      @default(now())
+  updatedAt       DateTime      @updatedAt
+  publishedAt     DateTime?
+
+  categories     Category[]      @relation("ProductCategories")
+  media          MediaAsset[]
+  affiliateLinks AffiliateLink[]
+  prices         ProductPrice[]
+  buildItems     BuildItem[]
+  comparisonItems ComparisonItem[]
+  clicks         AffiliateClick[]
+
+  /// Full-text search vector (generated column, managed by SQL migration).
+  searchVector Unsupported("tsvector")?
+
+  @@index([status])
+  @@index([isFeatured])
+  @@index([isTrending])
+  @@index([brandId])
+  @@index([lowestPriceCents])
+  @@index([searchVector], type: Gin)
+  @@map("products")
+}
+
+model MediaAsset {
+  id        String   @id @default(cuid())
+  url       String
+  alt       String?
+  width     Int?
+  height    Int?
+  mimeType  String?
+  // Owning product (nullable — assets can also back builds/posts via url).
+  productId String?
+  product   Product? @relation(fields: [productId], references: [id], onDelete: Cascade)
+  displayOrder Int   @default(0)
+  createdAt DateTime @default(now())
+
+  @@index([productId])
+  @@map("media_assets")
+}
+
+model AffiliateLink {
+  id           String   @id @default(cuid())
+  productId    String
+  product      Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
+  storeId      String
+  store        Store    @relation(fields: [storeId], references: [id], onDelete: Cascade)
+  // The raw destination URL (never exposed directly — served via /go redirect).
+  url          String
+  // Optional per-link override of the store tracking code.
+  trackingCode String?
+  label        String?  // e.g. "Versão 16GB"
+  isPrimary    Boolean  @default(false)
+  isActive     Boolean  @default(true)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  clicks AffiliateClick[]
+
+  @@unique([productId, storeId, label])
+  @@index([productId])
+  @@index([storeId])
+  @@map("affiliate_links")
+}
+
+model ProductPrice {
+  id         String   @id @default(cuid())
+  productId  String
+  product    Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
+  storeId    String
+  store      Store    @relation(fields: [storeId], references: [id], onDelete: Cascade)
+  // Stored in cents to avoid float issues.
+  priceCents Int
+  currency   Currency @default(BRL)
+  // Most recent observed price per (product, store) is flagged current.
+  isCurrent  Boolean  @default(true)
+  capturedAt DateTime @default(now())
+
+  @@index([productId, storeId, capturedAt])
+  @@index([productId, isCurrent])
+  @@map("product_prices")
+}
+
+// ─────────────────────────────────────────────────────────────────────────
+// Builds ("montagens")
+// ─────────────────────────────────────────────────────────────────────────
+
+model Build {
+  id              String        @id @default(cuid())
+  slug            String        @unique
+  title           String
+  summary         String?
+  description     String?       // long form
+  coverImageUrl   String?
+  budgetCents     Int?          // target budget in BRL cents
+  status          ContentStatus @default(DRAFT)
+  isFeatured      Boolean       @default(false)
+  // Curated pros/cons and alternatives notes.
+  pros            String[]      @default([])
+  cons            String[]      @default([])
+  createdAt       DateTime      @default(now())
+  updatedAt       DateTime      @updatedAt
+  publishedAt     DateTime?
+
+  items BuildItem[]
+
+  /// Full-text search vector (generated column, managed by SQL migration).
+  searchVector Unsupported("tsvector")?
+
+  @@index([status])
+  @@index([isFeatured])
+  @@index([searchVector], type: Gin)
+  @@map("builds")
+}
+
+model BuildItem {
+  id           String  @id @default(cuid())
+  buildId      String
+  build        Build   @relation(fields: [buildId], references: [id], onDelete: Cascade)
+  productId    String
+  product      Product @relation(fields: [productId], references: [id], onDelete: Restrict)
+  // Role of the part in the build, e.g. "CPU", "GPU", "Fonte".
+  role         String?
+  quantity     Int     @default(1)
+  note         String?
+  displayOrder Int     @default(0)
+
+  @@unique([buildId, productId])
+  @@index([buildId])
+  @@index([productId])
+  @@map("build_items")
+}
+
+// ─────────────────────────────────────────────────────────────────────────
+// Comparisons ("comparativos")
+// ─────────────────────────────────────────────────────────────────────────
+
+model Comparison {
+  id          String        @id @default(cuid())
+  slug        String        @unique
+  title       String
+  summary     String?
+  // Recommendation / verdict text.
+  verdict     String?
+  status      ContentStatus @default(DRAFT)
+  createdAt   DateTime      @default(now())
+  updatedAt   DateTime      @updatedAt
+  publishedAt DateTime?
+
+  items ComparisonItem[]
+
+  @@index([status])
+  @@map("comparisons")
+}
+
+model ComparisonItem {
+  id           String     @id @default(cuid())
+  comparisonId String
+  comparison   Comparison @relation(fields: [comparisonId], references: [id], onDelete: Cascade)
+  productId    String
+  product      Product    @relation(fields: [productId], references: [id], onDelete: Restrict)
+  // Optional per-item editorial pros/cons within this comparison.
+  pros         String[]   @default([])
+  cons         String[]   @default([])
+  displayOrder Int        @default(0)
+
+  @@unique([comparisonId, productId])
+  @@index([comparisonId])
+  @@index([productId])
+  @@map("comparison_items")
+}
+
+// ─────────────────────────────────────────────────────────────────────────
+// Blog
+// ─────────────────────────────────────────────────────────────────────────
+
+model BlogCategory {
+  id          String     @id @default(cuid())
+  slug        String     @unique
+  name        String
+  description String?
+  createdAt   DateTime   @default(now())
+  updatedAt   DateTime   @updatedAt
+
+  posts BlogPost[]
+
+  @@map("blog_categories")
+}
+
+model BlogTag {
+  id        String     @id @default(cuid())
+  slug      String     @unique
+  name      String
+  createdAt DateTime   @default(now())
+
+  posts BlogPost[] @relation("BlogPostTags")
+
+  @@map("blog_tags")
+}
+
+model BlogPost {
+  id            String        @id @default(cuid())
+  slug          String        @unique
+  title         String
+  excerpt       String?
+  content       String        @default("") // rich text / MDX / sanitized HTML
+  coverImageUrl String?
+  status        ContentStatus @default(DRAFT)
+  readingMinutes Int?
+  authorId      String?
+  author        User?         @relation(fields: [authorId], references: [id], onDelete: SetNull)
+  categoryId    String?
+  category      BlogCategory? @relation(fields: [categoryId], references: [id], onDelete: SetNull)
+  createdAt     DateTime      @default(now())
+  updatedAt     DateTime      @updatedAt
+  publishedAt   DateTime?
+
+  tags BlogTag[] @relation("BlogPostTags")
+
+  /// Full-text search vector (generated column, managed by SQL migration).
+  searchVector Unsupported("tsvector")?
+
+  @@index([status])
+  @@index([categoryId])
+  @@index([publishedAt])
+  @@index([searchVector], type: Gin)
+  @@map("blog_posts")
+}
+
+// ─────────────────────────────────────────────────────────────────────────
+// Affiliate click tracking
+// ─────────────────────────────────────────────────────────────────────────
+
+model AffiliateClick {
+  id              String   @id @default(cuid())
+  productId       String?
+  product         Product? @relation(fields: [productId], references: [id], onDelete: SetNull)
+  storeId         String?
+  store           Store?   @relation(fields: [storeId], references: [id], onDelete: SetNull)
+  affiliateLinkId String?
+  affiliateLink   AffiliateLink? @relation(fields: [affiliateLinkId], references: [id], onDelete: SetNull)
+  // Page the click originated from (referrer path).
+  referrer        String?
+  userAgent       String?
+  // SHA-256 hash of (ip + salt) — never store raw IP.
+  ipHash          String?
+  createdAt       DateTime @default(now())
+
+  @@index([createdAt])
+  @@index([storeId, createdAt])
+  @@index([productId, createdAt])
+  @@map("affiliate_clicks")
+}
+
+// ─────────────────────────────────────────────────────────────────────────
+// SEO metadata (polymorphic, one row per entity)
+// ─────────────────────────────────────────────────────────────────────────
+
+model SeoMetadata {
+  id          String        @id @default(cuid())
+  entityType  SeoEntityType
+  entityId    String
+  title       String?
+  description String?
+  canonical   String?
+  ogImageUrl  String?
+  noindex     Boolean       @default(false)
+  // Optional precomputed JSON-LD payload.
+  jsonLd      Json?
+  createdAt   DateTime      @default(now())
+  updatedAt   DateTime      @updatedAt
+
+  @@unique([entityType, entityId])
+  @@map("seo_metadata")
+}
+
+// ─────────────────────────────────────────────────────────────────────────
+// App settings (key/value — e.g. USD/BRL rate for the price crawler)
+// ─────────────────────────────────────────────────────────────────────────
+
+model AppSetting {
+  key       String   @id
+  value     String
+  updatedAt DateTime @updatedAt
+
+  @@map("app_settings")
+}

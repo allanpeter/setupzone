@@ -1,0 +1,32 @@
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: setupzone-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: setupzone
+      POSTGRES_PASSWORD: setupzone
+      POSTGRES_DB: setupzone
+    ports:
+      - "5442:5432"
+    volumes:
+      - setupzone-pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U setupzone"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  # Optional cache — enabled later (Phase: performance). Safe to leave running.
+  redis:
+    image: redis:7-alpine
+    container_name: setupzone-redis
+    restart: unless-stopped
+    ports:
+      - "6390:6379"
+    volumes:
+      - setupzone-redisdata:/data
+
+volumes:
+  setupzone-pgdata:
+  setupzone-redisdata:

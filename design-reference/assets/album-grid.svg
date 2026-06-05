@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 160">
+  <defs>
+    <pattern id="albumGrid" x="0" y="0" width="40" height="56" patternUnits="userSpaceOnUse">
+      <rect x="4" y="4" width="32" height="48" rx="4" fill="none" stroke="#0D1B2A" stroke-width="1" stroke-dasharray="2 2" opacity="0.4"></rect>
+    </pattern>
+  </defs>
+  <rect width="120" height="160" fill="url(#albumGrid)"></rect>
+</svg>
