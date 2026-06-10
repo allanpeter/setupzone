@@ -2,6 +2,10 @@ import type { MetadataRoute } from "next";
 import { db } from "@/lib/db";
 import { siteConfig } from "@/lib/site";
 
+// Built from the database, so generate it at request time (not at build) to
+// keep the build hermetic. See the note in (public)/layout.tsx.
+export const dynamic = "force-dynamic";
+
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const base = siteConfig.url;
 

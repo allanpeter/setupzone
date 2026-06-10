@@ -19,8 +19,8 @@ import {
   getCategoriesWithCounts,
 } from "@/lib/queries/products";
 
-// Discovery feed: refreshed signals (clicks/votes) — keep it fresh-ish.
-export const revalidate = 300;
+// The (public) layout forces dynamic rendering, so the discovery feed is always
+// fresh (clicks/votes) and never prerendered at build.
 
 const itemsToProducts = (
   collection: Awaited<ReturnType<typeof getCollectionBySlug>>,
