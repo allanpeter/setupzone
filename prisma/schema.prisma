@@ -36,6 +36,16 @@ enum SeoEntityType {
   PAGE
 }
 
+// Curated discovery shelves / feeds.
+enum CollectionKind {
+  SHELF // generic themed shelf on the home feed
+  SETUP_OF_WEEK // featured build of the week
+  HIDDEN_GEMS // "achados" / underrated picks
+  VIRAL // "viralizou" — curated viral picks
+  EDITORIAL // editor's pick rail
+  BUYING_GUIDE // powers programmatic "Melhor X" pages (Growth)
+}
+
 // ─────────────────────────────────────────────────────────────────────────
 // Auth (Better Auth core models + role)
 // ─────────────────────────────────────────────────────────────────────────
@@ -181,6 +191,8 @@ model Product {
   status          ContentStatus @default(DRAFT)
   isFeatured      Boolean       @default(false)
   isTrending      Boolean       @default(false)
+  // Denormalised "most wanted" signal (incremented by ProductVote / "Quero").
+  voteCount       Int           @default(0)
   // Denormalised "best current price" for cheap sorting/listing (in BRL cents).
   lowestPriceCents Int?
   rating          Float?
@@ -197,6 +209,8 @@ model Product {
   buildItems     BuildItem[]
   comparisonItems ComparisonItem[]
   clicks         AffiliateClick[]
+  votes          ProductVote[]
+  collectionItems CollectionItem[]
 
   /// Full-text search vector (generated column, managed by SQL migration).
   searchVector Unsupported("tsvector")?
@@ -291,6 +305,7 @@ model Build {
   publishedAt     DateTime?
 
   items BuildItem[]
+  collectionItems CollectionItem[]
 
   /// Full-text search vector (generated column, managed by SQL migration).
   searchVector Unsupported("tsvector")?
@@ -460,6 +475,60 @@ model SeoMetadata {
 
   @@unique([entityType, entityId])
   @@map("seo_metadata")
+}
+
+// ─────────────────────────────────────────────────────────────────────────
+// Discovery: curated collections (home feed rails / shelves) + votes
+// ─────────────────────────────────────────────────────────────────────────
+
+model Collection {
+  id           String         @id @default(cuid())
+  slug         String         @unique
+  title        String
+  subtitle     String?
+  kind         CollectionKind @default(SHELF)
+  status       ContentStatus  @default(PUBLISHED)
+  // Position of the rail on the home feed.
+  displayOrder Int            @default(0)
+  createdAt    DateTime       @default(now())
+  updatedAt    DateTime       @updatedAt
+
+  items CollectionItem[]
+
+  @@index([status, displayOrder])
+  @@index([kind])
+  @@map("collections")
+}
+
+model CollectionItem {
+  id           String     @id @default(cuid())
+  collectionId String
+  collection   Collection @relation(fields: [collectionId], references: [id], onDelete: Cascade)
+  // An item points to either a product or a build.
+  productId    String?
+  product      Product?   @relation(fields: [productId], references: [id], onDelete: Cascade)
+  buildId      String?
+  build        Build?     @relation(fields: [buildId], references: [id], onDelete: Cascade)
+  note         String?
+  displayOrder Int        @default(0)
+
+  @@index([collectionId, displayOrder])
+  @@index([productId])
+  @@index([buildId])
+  @@map("collection_items")
+}
+
+// "Quero" / upvote. ipHash dedups anonymous votes without storing raw IPs.
+model ProductVote {
+  id        String   @id @default(cuid())
+  productId String
+  product   Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
+  ipHash    String
+  createdAt DateTime @default(now())
+
+  @@unique([productId, ipHash])
+  @@index([productId])
+  @@map("product_votes")
 }
 
 // ─────────────────────────────────────────────────────────────────────────

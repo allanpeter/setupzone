@@ -4,8 +4,8 @@ import { Menu, Search } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useState } from "react";
+import { CommandPalette } from "@/components/discovery/command-palette";
 import { Logo } from "@/components/logo";
-import { ThemeToggle } from "@/components/theme-toggle";
 import { Button } from "@/components/ui/button";
 import {
   Sheet,
@@ -50,13 +50,19 @@ export function SiteNav() {
         <div className="ml-auto flex items-center gap-2">
           <Button
             variant="outline"
-            size="icon"
+            size="sm"
             aria-label="Buscar"
-            render={<Link href="/busca" />}
+            nativeButton
+            onClick={() =>
+              window.dispatchEvent(new Event("setupzone:open-search"))
+            }
+            className="gap-2"
           >
             <Search className="size-4" />
+            <kbd className="hidden font-mono text-[10px] text-muted-foreground sm:inline">
+              ⌘K
+            </kbd>
           </Button>
-          <ThemeToggle />
           <Button
             variant="brand"
             size="sm"
@@ -105,6 +111,7 @@ export function SiteNav() {
           </Sheet>
         </div>
       </div>
+      <CommandPalette />
     </header>
   );
 }

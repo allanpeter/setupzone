@@ -1,3 +1,4 @@
+import DOMPurify from "isomorphic-dompurify";
 import type { Metadata } from "next";
 import Image from "next/image";
 import Link from "next/link";
@@ -99,10 +100,10 @@ export default async function BlogPostPage({
       ) : null}
 
       <Container className="max-w-3xl">
-        {/* Content is authored in the admin rich editor (trusted). */}
+        {/* Content is admin-authored; sanitize defensively before render. */}
         <div
           className="prose-sz"
-          dangerouslySetInnerHTML={{ __html: post.content }}
+          dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(post.content) }}
         />
 
         {post.tags.length > 0 ? (

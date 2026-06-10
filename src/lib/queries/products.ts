@@ -10,6 +10,7 @@ export const productCardSelect = {
   lowestPriceCents: true,
   isFeatured: true,
   isTrending: true,
+  voteCount: true,
   brand: { select: { name: true, slug: true } },
   media: {
     orderBy: { displayOrder: "asc" },
@@ -157,3 +158,24 @@ export const getRelatedProducts = cache(
 );
 
 export type ProductCardData = Awaited<ReturnType<typeof getFeaturedProducts>>[number];
+
+/**
+ * Price history stats for a product: lowest ever recorded + how many points
+ * we've tracked. Powers the "menor preço registrado" urgency cue (and grows
+ * richer once the price crawler is wired in the Growth phase).
+ */
+export const getPriceStats = cache(async (productId: string) => {
+  const [agg, count] = await Promise.all([
+    db.productPrice.aggregate({
+      where: { productId },
+      _min: { priceCents: true },
+      _max: { priceCents: true },
+    }),
+    db.productPrice.count({ where: { productId } }),
+  ]);
+  return {
+    lowestEverCents: agg._min.priceCents,
+    highestEverCents: agg._max.priceCents,
+    points: count,
+  };
+});

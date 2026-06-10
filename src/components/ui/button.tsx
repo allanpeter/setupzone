@@ -10,9 +10,9 @@ const buttonVariants = cva(
       variant: {
         default: "bg-primary text-primary-foreground hover:bg-primary/80",
         brand:
-          "bg-primary text-primary-foreground shadow-sticker-2 hover:bg-green-600 hover:-translate-y-px hover:shadow-sticker-3 active:bg-green-700 active:translate-y-px",
+          "bg-primary text-primary-foreground font-semibold hover:bg-magenta-600 hover:-translate-y-px hover:shadow-glow-magenta active:bg-magenta-700 active:translate-y-px",
         accent:
-          "bg-accent text-accent-foreground shadow-sticker-2 hover:bg-gold-300 hover:-translate-y-px",
+          "bg-accent text-accent-foreground font-semibold hover:bg-cyan-400 hover:-translate-y-px hover:shadow-glow-cyan",
         outline:
           "border-border bg-background hover:bg-muted hover:text-foreground aria-expanded:bg-muted aria-expanded:text-foreground dark:border-input dark:bg-input/30 dark:hover:bg-input/50",
         secondary:

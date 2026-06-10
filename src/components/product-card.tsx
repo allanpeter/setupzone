@@ -1,19 +1,30 @@
+import { Flame } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
-import { Badge } from "@/components/ui/badge";
+import { VoteButton } from "@/components/discovery/vote-button";
 import { formatBRL } from "@/lib/format";
 import type { ProductCardData } from "@/lib/queries/products";
 
-export function ProductCard({ product }: { product: ProductCardData }) {
+export function ProductCard({
+  product,
+  hot = false,
+}: {
+  product: ProductCardData;
+  hot?: boolean;
+}) {
   const cover = product.media[0];
   const category = product.categories[0];
 
   return (
-    <Link
-      href={`/produtos/${product.slug}`}
-      className="group flex flex-col overflow-hidden rounded-sticker border border-border bg-card shadow-sticker-1 transition-all hover:-translate-y-1 hover:shadow-sticker-3"
-    >
-      <div className="relative aspect-[4/3] overflow-hidden bg-muted">
+    <article className="group relative flex flex-col overflow-hidden rounded-card border border-border bg-card transition-all hover:-translate-y-1 hover:border-magenta-500/40 hover:shadow-glow-magenta">
+      {/* Whole-card link overlay (sits below interactive bits). */}
+      <Link
+        href={`/produtos/${product.slug}`}
+        className="absolute inset-0 z-10"
+        aria-label={product.name}
+      />
+
+      <div className="relative aspect-[4/3] overflow-hidden bg-ink-850">
         {cover ? (
           <Image
             src={cover.url}
@@ -23,27 +34,27 @@ export function ProductCard({ product }: { product: ProductCardData }) {
             className="object-cover transition-transform duration-500 group-hover:scale-105"
           />
         ) : null}
-        {product.isTrending ? (
-          <Badge className="absolute left-3 top-3 bg-accent text-accent-foreground">
-            Em alta
-          </Badge>
+        {hot ? (
+          <span className="absolute left-3 top-3 z-20 inline-flex items-center gap-1 rounded-pill bg-magenta-500 px-2.5 py-1 text-xs font-bold text-magenta-50 shadow-glow-magenta">
+            <Flame className="size-3.5" /> Em alta
+          </span>
         ) : null}
+        <VoteButton
+          slug={product.slug}
+          initialCount={product.voteCount}
+          className="absolute right-3 top-3"
+        />
       </div>
 
       <div className="flex flex-1 flex-col gap-2 p-4">
         {category ? (
-          <span className="t-eyebrow bg-transparent p-0 text-muted-foreground">
+          <span className="font-mono text-[11px] uppercase tracking-wider text-accent">
             {category.name}
           </span>
         ) : null}
-        <h3 className="line-clamp-2 font-display text-base font-bold leading-snug text-foreground">
+        <h3 className="line-clamp-2 font-display text-base font-semibold leading-snug text-foreground">
           {product.name}
         </h3>
-        {product.shortDescription ? (
-          <p className="line-clamp-2 text-sm text-muted-foreground">
-            {product.shortDescription}
-          </p>
-        ) : null}
 
         <div className="mt-auto flex items-baseline gap-1.5 pt-2">
           <span className="text-xs text-muted-foreground">a partir de</span>
@@ -52,15 +63,21 @@ export function ProductCard({ product }: { product: ProductCardData }) {
           </span>
         </div>
       </div>
-    </Link>
+    </article>
   );
 }
 
-export function ProductCardGrid({ products }: { products: ProductCardData[] }) {
+export function ProductCardGrid({
+  products,
+  hot = false,
+}: {
+  products: ProductCardData[];
+  hot?: boolean;
+}) {
   return (
     <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-4">
       {products.map((p) => (
-        <ProductCard key={p.id} product={p} />
+        <ProductCard key={p.id} product={p} hot={hot} />
       ))}
     </div>
   );

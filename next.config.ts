@@ -13,8 +13,14 @@ const nextConfig: NextConfig = {
   },
   images: {
     remotePatterns: [
-      // AliExpress / marketplace CDNs + S3 media bucket. Tighten in prod.
-      { protocol: "https", hostname: "**" },
+      { protocol: "https", hostname: "picsum.photos" }, // seed/demo images
+      { protocol: "https", hostname: "*.alicdn.com" }, // AliExpress
+      { protocol: "https", hostname: "http2.mlstatic.com" }, // Mercado Livre
+      { protocol: "https", hostname: "*.shopee.com.br" }, // Shopee
+      { protocol: "https", hostname: "down-br.img.susercontent.com" }, // Shopee CDN
+      { protocol: "https", hostname: "m.media-amazon.com" }, // Amazon
+      { protocol: "https", hostname: "*.r2.dev" }, // Cloudflare R2 (S3 media)
+      { protocol: "https", hostname: "*.amazonaws.com" }, // S3 media
     ],
   },
 };

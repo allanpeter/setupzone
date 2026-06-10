@@ -6,9 +6,13 @@ import { JsonLd } from "@/components/json-ld";
 import { ProductCardGrid } from "@/components/product-card";
 import { Container } from "@/components/section";
 import { StoreBuyList, type StoreOffer } from "@/components/store-buy-list";
-import { asSpecs } from "@/lib/format";
+import { asSpecs, formatBRL } from "@/lib/format";
 import { breadcrumbJsonLd, productJsonLd } from "@/lib/jsonld";
-import { getProductBySlug, getRelatedProducts } from "@/lib/queries/products";
+import {
+  getPriceStats,
+  getProductBySlug,
+  getRelatedProducts,
+} from "@/lib/queries/products";
 
 export async function generateMetadata({
   params,
@@ -41,7 +45,10 @@ export default async function ProductPage({
   const specs = asSpecs(product.specs);
   const cover = product.media[0];
   const categorySlugs = product.categories.map((c) => c.slug);
-  const related = await getRelatedProducts(product.id, categorySlugs);
+  const [related, priceStats] = await Promise.all([
+    getRelatedProducts(product.id, categorySlugs),
+    getPriceStats(product.id),
+  ]);
 
   // Build store offers: join current price + affiliate link per store.
   const lowest = product.lowestPriceCents;
@@ -154,6 +161,15 @@ export default async function ProductPage({
           <div className="mt-6">
             <h2 className="t-eyebrow mb-3">comprar em</h2>
             <StoreBuyList productSlug={product.slug} offers={offers} />
+            {priceStats.lowestEverCents != null ? (
+              <p className="mt-3 text-xs text-muted-foreground">
+                Menor preço registrado:{" "}
+                <span className="t-num text-accent">
+                  {formatBRL(priceStats.lowestEverCents)}
+                </span>
+                {priceStats.points > 1 ? ` · ${priceStats.points} registros` : null}
+              </p>
+            ) : null}
           </div>
         </div>
       </div>

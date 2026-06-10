@@ -5,71 +5,60 @@
 @custom-variant dark (&:is(.dark *));
 
 /* =====================================================================
-   SetupZone design system — ported from design-reference/tokens.css
-   Brand: football-pitch green (#0FA958) + trophy gold (#F5C518)
-   on warm album cream. Light + dark.
+   SetupZone — "Arcade Neon" design system (dark-first)
+   Discovery engine, anti-marketplace. Magenta + cyan on near-black.
    ===================================================================== */
 @theme {
-  /* ---- Raw palette (utilities: bg-green-500, text-ink-800, ...) ---- */
-  --color-green-50: #e6f8ee;
-  --color-green-100: #c5efd7;
-  --color-green-200: #8fdfb0;
-  --color-green-300: #54cd86;
-  --color-green-400: #25b968;
-  --color-green-500: #0fa958;
-  --color-green-600: #0a8847;
-  --color-green-700: #086936;
-  --color-green-800: #064c28;
-  --color-green-900: #03301a;
+  /* ---- Raw palette (utilities: bg-magenta-500, text-cyan-400, ...) ---- */
+  --color-magenta-300: #ff8cc8;
+  --color-magenta-400: #ff5cb0;
+  --color-magenta-500: #ff2e9a;
+  --color-magenta-600: #e01580;
+  --color-magenta-700: #b00f64;
 
-  --color-gold-50: #fff8da;
-  --color-gold-100: #ffefaa;
-  --color-gold-200: #fbe173;
-  --color-gold-300: #f8d043;
-  --color-gold-400: #f5c518;
-  --color-gold-500: #daa90a;
-  --color-gold-600: #a88308;
-  --color-gold-700: #735906;
+  --color-cyan-300: #7df0ff;
+  --color-cyan-400: #38e0f5;
+  --color-cyan-500: #00e5ff;
+  --color-cyan-600: #00b8cc;
 
-  --color-ink-50: #f2f4f7;
-  --color-ink-100: #dce1e8;
-  --color-ink-200: #b5bdcb;
-  --color-ink-300: #8993a6;
-  --color-ink-400: #5c6779;
-  --color-ink-500: #3a4456;
-  --color-ink-600: #22293a;
-  --color-ink-700: #14202f;
-  --color-ink-800: #0d1b2a;
-  --color-ink-900: #060e18;
+  --color-lime-400: #c8ff5c;
+  --color-lime-500: #b6ff3c;
+  --color-lime-600: #93d61f;
 
-  --color-cream-50: #fefcf7;
-  --color-cream-100: #fbf6ec;
-  --color-cream-200: #f5edd9;
-  --color-cream-300: #ecdfbe;
-  --color-cream-400: #d9c58e;
-
-  --color-rare-50: #fceaf1;
-  --color-rare-100: #f9c6d9;
-  --color-rare-200: #f390b5;
-  --color-rare-300: #eb5e92;
-  --color-rare-400: #e63978;
-  --color-rare-500: #c42461;
-  --color-rare-600: #951649;
+  /* Ink / graphite surfaces */
+  --color-ink-950: #07070d;
+  --color-ink-900: #0a0a12;
+  --color-ink-850: #101020;
+  --color-ink-800: #151524;
+  --color-ink-700: #1c1c30;
+  --color-ink-600: #262640;
+  --color-ink-500: #3a3a58;
+  --color-ink-400: #6b6b8a;
+  --color-ink-300: #9aa0b5;
+  --color-ink-200: #c4c8d8;
+  --color-ink-100: #e8eaf2;
+  --color-ink-50: #f5f5ff;
 
   /* ---- Fonts (CSS vars set by next/font in layout.tsx) ---- */
-  --font-display: var(--font-bricolage), "Arial Narrow", system-ui, sans-serif;
-  --font-sans: var(--font-dm-sans), system-ui, -apple-system, "Segoe UI", sans-serif;
+  --font-display: var(--font-space-grotesk), system-ui, sans-serif;
+  --font-sans: var(--font-inter), system-ui, -apple-system, "Segoe UI", sans-serif;
   --font-mono: var(--font-jetbrains), ui-monospace, "SF Mono", Menlo, monospace;
 
-  /* ---- Radii (signature 14px "sticker" corner) ---- */
-  --radius-sticker: 14px;
+  /* ---- Radii ---- */
+  --radius-card: 12px;
   --radius-pill: 999px;
+  /* Back-compat alias (was the "figurinha" radius) so existing markup keeps working. */
+  --radius-sticker: 12px;
 
-  /* ---- Shadows (warm "printed sticker" elevation) ---- */
-  --shadow-sticker-1: 0 1px 0 rgba(13, 27, 42, 0.04), 0 1px 2px rgba(13, 27, 42, 0.06);
-  --shadow-sticker-2: 0 1px 0 rgba(13, 27, 42, 0.04), 0 2px 6px rgba(13, 27, 42, 0.08);
-  --shadow-sticker-3: 0 2px 0 rgba(13, 27, 42, 0.04), 0 8px 20px rgba(13, 27, 42, 0.1);
-  --shadow-sticker-4: 0 4px 0 rgba(13, 27, 42, 0.05), 0 18px 40px rgba(13, 27, 42, 0.14);
+  /* ---- Neon glows + elevation ---- */
+  --shadow-card: 0 1px 0 rgba(255, 255, 255, 0.03), 0 8px 24px rgba(0, 0, 0, 0.45);
+  --shadow-glow-magenta: 0 0 0 1px rgba(255, 46, 154, 0.5), 0 8px 30px rgba(255, 46, 154, 0.28);
+  --shadow-glow-cyan: 0 0 0 1px rgba(0, 229, 255, 0.5), 0 8px 30px rgba(0, 229, 255, 0.25);
+  /* Back-compat elevation aliases (dark, subtle → stronger). */
+  --shadow-sticker-1: 0 1px 2px rgba(0, 0, 0, 0.4);
+  --shadow-sticker-2: 0 2px 8px rgba(0, 0, 0, 0.45);
+  --shadow-sticker-3: 0 10px 28px rgba(0, 0, 0, 0.5);
+  --shadow-sticker-4: 0 18px 44px rgba(0, 0, 0, 0.55);
 
   /* ---- Motion ---- */
   --ease-out: cubic-bezier(0.22, 0.61, 0.36, 1);
@@ -77,7 +66,8 @@
 }
 
 /* =====================================================================
-   shadcn semantic tokens, mapped to the SetupZone palette
+   shadcn semantic tokens — Arcade Neon (dark-only for now)
+   :root and .dark are identical so the theme is correct regardless of class.
    ===================================================================== */
 @theme inline {
   --color-background: var(--background);
@@ -118,76 +108,42 @@
   --radius-xl: calc(var(--radius) + 4px);
 }
 
-:root {
+:root,
+.dark {
   --radius: 0.75rem;
 
-  --background: #fbf6ec; /* cream-100 */
-  --foreground: #0d1b2a; /* ink-800 */
-  --card: #ffffff;
-  --card-foreground: #0d1b2a;
-  --popover: #ffffff;
-  --popover-foreground: #0d1b2a;
-  --primary: #0fa958; /* green-500 */
-  --primary-foreground: #ffffff;
-  --secondary: #f5edd9; /* cream-200 */
-  --secondary-foreground: #0d1b2a;
-  --muted: #f5edd9;
-  --muted-foreground: #3a4456; /* ink-500 */
-  --accent: #f5c518; /* gold-400 */
-  --accent-foreground: #0d1b2a;
-  --destructive: #dc3545;
-  --border: #e7ddc4; /* warm low-contrast on cream */
-  --input: #e7ddc4;
-  --ring: #0fa958;
-  --chart-1: #0fa958;
-  --chart-2: #f5c518;
-  --chart-3: #e63978;
-  --chart-4: #0d1b2a;
-  --chart-5: #25b968;
+  --background: #0a0a12; /* ink-900 */
+  --foreground: #f5f5ff;
+  --card: #151524; /* ink-800 */
+  --card-foreground: #f5f5ff;
+  --popover: #101020;
+  --popover-foreground: #f5f5ff;
+  --primary: #ff2e9a; /* magenta */
+  --primary-foreground: #0a0a12;
+  --secondary: #1c1c30; /* ink-700 */
+  --secondary-foreground: #f5f5ff;
+  --muted: #1c1c30;
+  --muted-foreground: #9aa0b5; /* ink-300 */
+  --accent: #00e5ff; /* cyan */
+  --accent-foreground: #0a0a12;
+  --destructive: #ff4d4d;
+  --border: rgba(255, 255, 255, 0.09);
+  --input: rgba(255, 255, 255, 0.13);
+  --ring: #ff2e9a;
+  --chart-1: #ff2e9a;
+  --chart-2: #00e5ff;
+  --chart-3: #b6ff3c;
+  --chart-4: #ff8cc8;
+  --chart-5: #7df0ff;
 
-  --sidebar: #ffffff;
-  --sidebar-foreground: #0d1b2a;
-  --sidebar-primary: #0fa958;
-  --sidebar-primary-foreground: #ffffff;
-  --sidebar-accent: #f5edd9;
-  --sidebar-accent-foreground: #0d1b2a;
-  --sidebar-border: #e7ddc4;
-  --sidebar-ring: #0fa958;
-}
-
-.dark {
-  --background: #060e18; /* ink-900 */
-  --foreground: #fefcf7; /* cream-50 */
-  --card: #0d1b2a; /* ink-800 */
-  --card-foreground: #fefcf7;
-  --popover: #0d1b2a;
-  --popover-foreground: #fefcf7;
-  --primary: #0fa958;
-  --primary-foreground: #ffffff;
-  --secondary: #14202f; /* ink-700 */
-  --secondary-foreground: #fefcf7;
-  --muted: #14202f;
-  --muted-foreground: #b5bdcb; /* ink-200 */
-  --accent: #f5c518;
-  --accent-foreground: #060e18;
-  --destructive: #e5484d;
-  --border: rgba(255, 255, 255, 0.1);
-  --input: rgba(255, 255, 255, 0.15);
-  --ring: #25b968;
-  --chart-1: #25b968;
-  --chart-2: #f5c518;
-  --chart-3: #eb5e92;
-  --chart-4: #b5bdcb;
-  --chart-5: #54cd86;
-
-  --sidebar: #0d1b2a;
-  --sidebar-foreground: #fefcf7;
-  --sidebar-primary: #0fa958;
-  --sidebar-primary-foreground: #ffffff;
-  --sidebar-accent: #14202f;
-  --sidebar-accent-foreground: #fefcf7;
-  --sidebar-border: rgba(255, 255, 255, 0.1);
-  --sidebar-ring: #25b968;
+  --sidebar: #101020;
+  --sidebar-foreground: #f5f5ff;
+  --sidebar-primary: #ff2e9a;
+  --sidebar-primary-foreground: #0a0a12;
+  --sidebar-accent: #1c1c30;
+  --sidebar-accent-foreground: #f5f5ff;
+  --sidebar-border: rgba(255, 255, 255, 0.09);
+  --sidebar-ring: #ff2e9a;
 }
 
 @layer base {
@@ -196,81 +152,96 @@
   }
   body {
     @apply bg-background text-foreground;
-    font-feature-settings: "ss01" 1;
+    /* Subtle radial glow + dotted grid to feel like a "lab" canvas. */
+    background-image:
+      radial-gradient(60rem 40rem at 80% -10%, rgba(255, 46, 154, 0.08), transparent 60%),
+      radial-gradient(50rem 36rem at 0% 0%, rgba(0, 229, 255, 0.06), transparent 55%);
+    background-attachment: fixed;
   }
   html {
     @apply font-sans;
+    color-scheme: dark;
   }
 }
 
 /* =====================================================================
-   Typography helpers (ported from tokens.css semantic text styles)
+   Typography + neon utilities
    ===================================================================== */
 @layer components {
   .t-display-xl {
     font-family: var(--font-display);
-    font-weight: 800;
-    font-size: clamp(56px, 8vw, 88px);
-    line-height: 1.04;
-    letter-spacing: -0.02em;
+    font-weight: 700;
+    font-size: clamp(48px, 7vw, 84px);
+    line-height: 1.02;
+    letter-spacing: -0.03em;
     text-wrap: balance;
   }
   .t-display-lg {
     font-family: var(--font-display);
     font-weight: 700;
-    font-size: clamp(40px, 6vw, 64px);
+    font-size: clamp(36px, 5.5vw, 60px);
     line-height: 1.04;
-    letter-spacing: -0.02em;
+    letter-spacing: -0.03em;
     text-wrap: balance;
   }
   .t-display-md {
     font-family: var(--font-display);
     font-weight: 700;
-    font-size: clamp(30px, 4.2vw, 48px);
-    line-height: 1.18;
+    font-size: clamp(28px, 4vw, 44px);
+    line-height: 1.1;
     letter-spacing: -0.02em;
     text-wrap: balance;
   }
   .t-h1 {
     font-family: var(--font-display);
     font-weight: 700;
-    font-size: clamp(28px, 3.4vw, 36px);
-    line-height: 1.18;
-    letter-spacing: -0.01em;
+    font-size: clamp(26px, 3.2vw, 34px);
+    line-height: 1.15;
+    letter-spacing: -0.02em;
   }
   .t-h2 {
     font-family: var(--font-display);
     font-weight: 600;
-    font-size: 28px;
-    line-height: 1.18;
+    font-size: 26px;
+    line-height: 1.2;
     letter-spacing: -0.01em;
   }
   .t-h3 {
-    font-weight: 700;
-    font-size: 22px;
-    line-height: 1.18;
+    font-family: var(--font-display);
+    font-weight: 600;
+    font-size: 20px;
+    line-height: 1.2;
   }
+  /* Neon eyebrow — uppercase, tracked, cyan on tint. */
   .t-eyebrow {
     display: inline-block;
     white-space: nowrap;
+    font-family: var(--font-mono);
     font-weight: 700;
-    font-size: 12px;
-    letter-spacing: 0.08em;
+    font-size: 11px;
+    letter-spacing: 0.14em;
     text-transform: uppercase;
-    color: var(--primary);
-    background: color-mix(in srgb, var(--primary) 10%, transparent);
-    padding: 5px 11px;
+    color: var(--accent);
+    background: color-mix(in srgb, var(--accent) 12%, transparent);
+    padding: 4px 10px;
     border-radius: var(--radius-pill);
   }
-  /* tabular mono numbers — prices, stats */
   .t-num {
     font-family: var(--font-mono);
     font-weight: 700;
     font-feature-settings: "tnum" 1, "zero" 1;
-    letter-spacing: 0.02em;
+    letter-spacing: 0.01em;
   }
 
-  /* Long-form article/content styling (blog posts, product descriptions). */
+  /* Gradient text (magenta → cyan) for big headlines. */
+  .text-neon-gradient {
+    background: linear-gradient(100deg, #ff2e9a 0%, #ff8cc8 35%, #00e5ff 100%);
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+  }
+
+  /* Long-form article/content styling. */
   .prose-sz {
     font-size: 1.0625rem;
     line-height: 1.7;
@@ -288,12 +259,12 @@
   }
   .prose-sz h3 {
     font-family: var(--font-display);
-    font-weight: 700;
+    font-weight: 600;
     font-size: 1.3rem;
     margin-top: 1.6em;
   }
   .prose-sz a {
-    color: var(--primary);
+    color: var(--accent);
     text-decoration: underline;
     text-underline-offset: 2px;
   }
@@ -306,7 +277,7 @@
     color: var(--muted-foreground);
   }
   .prose-sz img {
-    border-radius: var(--radius-sticker);
+    border-radius: var(--radius-card);
     border: 1px solid var(--border);
   }
   .prose-sz blockquote {

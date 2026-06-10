@@ -95,11 +95,11 @@ export default async function BuildPage({
           ) : null}
           {build.cons.length > 0 ? (
             <div className="rounded-sticker border border-border bg-card p-5">
-              <h2 className="t-eyebrow mb-3 text-rare-400">contras</h2>
+              <h2 className="t-eyebrow mb-3 text-destructive">contras</h2>
               <ul className="space-y-2">
                 {build.cons.map((c) => (
                   <li key={c} className="flex gap-2 text-sm">
-                    <X className="mt-0.5 size-4 shrink-0 text-rare-400" />
+                    <X className="mt-0.5 size-4 shrink-0 text-destructive" />
                     {c}
                   </li>
                 ))}

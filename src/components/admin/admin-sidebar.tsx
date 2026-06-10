@@ -9,6 +9,7 @@ import {
   Layers,
   LogOut,
   Package,
+  Sparkles,
   Store,
   Tag,
 } from "lucide-react";
@@ -21,6 +22,7 @@ import { cn } from "@/lib/utils";
 const nav = [
   { href: "/admin", label: "Dashboard", icon: LayoutDashboard, exact: true },
   { href: "/admin/produtos", label: "Produtos", icon: Package },
+  { href: "/admin/colecoes", label: "Coleções", icon: Sparkles },
   { href: "/admin/categorias", label: "Categorias", icon: Boxes },
   { href: "/admin/marcas", label: "Marcas", icon: Tag },
   { href: "/admin/lojas", label: "Lojas", icon: Store },

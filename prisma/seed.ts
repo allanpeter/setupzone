@@ -415,6 +415,90 @@ async function main() {
     },
   });
 
+  // ── Votos ("mais desejados") ────────────────────────────────────────
+  const votes: Record<string, number> = {
+    "mini-pc-beelink-ser5": 142,
+    "amd-ryzen-5-5600": 98,
+    "ssd-kingston-nv2-1tb": 76,
+    "impressora-creality-ender-3-v3": 61,
+    "roteador-xiaomi-ax3000": 33,
+  };
+  for (const [slug, count] of Object.entries(votes)) {
+    if (productIds[slug]) {
+      await db.product.update({
+        where: { id: productIds[slug] },
+        data: { voteCount: count },
+      });
+    }
+  }
+
+  // ── Coleções (rails da home de descoberta) ──────────────────────────
+  const collections: {
+    slug: string;
+    title: string;
+    subtitle?: string;
+    kind: "SHELF" | "SETUP_OF_WEEK" | "HIDDEN_GEMS" | "VIRAL" | "EDITORIAL" | "BUYING_GUIDE";
+    order: number;
+    products?: string[];
+    builds?: string[];
+  }[] = [
+    {
+      slug: "setup-da-semana",
+      title: "Setup da semana",
+      subtitle: "A montagem que a comunidade está de olho",
+      kind: "SETUP_OF_WEEK",
+      order: 0,
+      builds: ["homelab-proxmox-starter"],
+    },
+    {
+      slug: "achados-tecnologicos",
+      title: "Achados tecnológicos",
+      subtitle: "Custo-benefício que pouca gente conhece",
+      kind: "HIDDEN_GEMS",
+      order: 1,
+      products: ["hub-ugreen-usb-c-6em1", "memoria-kingston-fury-16gb-ddr4", "mouse-logitech-g203"],
+    },
+    {
+      slug: "viralizou",
+      title: "Viralizou",
+      subtitle: "Bombando nas redes esta semana",
+      kind: "VIRAL",
+      order: 2,
+      products: ["mini-pc-beelink-ser5", "impressora-creality-ender-3-v3", "amd-ryzen-5-5600"],
+    },
+  ];
+
+  for (const c of collections) {
+    const collection = await db.collection.upsert({
+      where: { slug: c.slug },
+      update: { title: c.title, subtitle: c.subtitle, kind: c.kind, displayOrder: c.order },
+      create: {
+        slug: c.slug,
+        title: c.title,
+        subtitle: c.subtitle,
+        kind: c.kind,
+        displayOrder: c.order,
+        status: "PUBLISHED",
+      },
+    });
+    await db.collectionItem.deleteMany({ where: { collectionId: collection.id } });
+    let order = 0;
+    for (const slug of c.products ?? []) {
+      if (productIds[slug]) {
+        await db.collectionItem.create({
+          data: { collectionId: collection.id, productId: productIds[slug], displayOrder: order++ },
+        });
+      }
+    }
+    for (const slug of c.builds ?? []) {
+      if (slug === "homelab-proxmox-starter") {
+        await db.collectionItem.create({
+          data: { collectionId: collection.id, buildId: build.id, displayOrder: order++ },
+        });
+      }
+    }
+  }
+
   console.log("✅ Seed complete.");
 }
 

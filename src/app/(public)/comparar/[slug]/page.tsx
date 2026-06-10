@@ -167,7 +167,7 @@ export default async function ComparisonPage({
                   <ul className="space-y-1.5 text-left">
                     {it.cons.map((c) => (
                       <li key={c} className="flex gap-1.5 text-xs">
-                        <X className="mt-0.5 size-3.5 shrink-0 text-rare-400" />
+                        <X className="mt-0.5 size-3.5 shrink-0 text-destructive" />
                         {c}
                       </li>
                     ))}
