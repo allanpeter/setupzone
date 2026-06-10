@@ -1,3 +1,12 @@
+# Supply-chain cooldown: só instala pacotes publicados há >= 1 dia.
+# O servidor de build (Coolify) já aplica essa política; fixamos aqui no repo
+# para controlá-la por projeto. As exclusões abaixo são versões transitivas
+# que já estavam travadas no lockfile antes de completarem 24h.
+minimumReleaseAge: 1440
+minimumReleaseAgeExclude:
+  - "@csstools/css-color-parser@4.1.2"
+  - dompurify@3.4.9
+
 onlyBuiltDependencies:
   - "@prisma/client"
   - "@prisma/engines"
