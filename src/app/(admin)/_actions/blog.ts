@@ -6,6 +6,7 @@ import { z } from "zod";
 import { requireAdmin } from "@/lib/auth-guard";
 import { db } from "@/lib/db";
 import { slugify } from "@/lib/slug";
+import { isUniqueViolation, slugTakenRedirect } from "./_shared";
 
 const postSchema = z.object({
   id: z.string().optional(),
@@ -55,16 +56,23 @@ export async function savePost(formData: FormData) {
   };
 
   let postId = data.id;
-  if (postId) {
-    await db.blogPost.update({
-      where: { id: postId },
-      data: { ...base, tags: { set: tagIds } },
-    });
-  } else {
-    const created = await db.blogPost.create({
-      data: { ...base, tags: { connect: tagIds } },
-    });
-    postId = created.id;
+  try {
+    if (postId) {
+      await db.blogPost.update({
+        where: { id: postId },
+        data: { ...base, tags: { set: tagIds } },
+      });
+    } else {
+      const created = await db.blogPost.create({
+        data: { ...base, tags: { connect: tagIds } },
+      });
+      postId = created.id;
+    }
+  } catch (e) {
+    if (isUniqueViolation(e)) {
+      slugTakenRedirect(data.id ? `/admin/blog/${data.id}` : "/admin/blog/novo");
+    }
+    throw e;
   }
 
   revalidatePath("/admin/blog");

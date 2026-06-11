@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { DeleteButton } from "@/components/admin/delete-button";
-import { AdminHeader, Field, inputClass } from "@/components/admin/ui";
+import { AdminHeader, Field, FormError, inputClass } from "@/components/admin/ui";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { db } from "@/lib/db";
@@ -15,7 +15,12 @@ const KINDS = [
   { value: "BUYING_GUIDE", label: "Guia de compra" },
 ];
 
-export default async function AdminCollections() {
+export default async function AdminCollections({
+  searchParams,
+}: {
+  searchParams: Promise<{ error?: string }>;
+}) {
+  const { error } = await searchParams;
   const collections = await db.collection.findMany({
     orderBy: { displayOrder: "asc" },
     include: { _count: { select: { items: true } } },
@@ -27,6 +32,10 @@ export default async function AdminCollections() {
         title="Coleções"
         description="Curadoria dos rails da home (Setup da semana, Achados, Viralizou…)."
       />
+
+      {error === "slug" ? (
+        <FormError message="Já existe uma coleção com esse slug. Use um título/slug diferente." />
+      ) : null}
 
       <form
         action={saveCollection}

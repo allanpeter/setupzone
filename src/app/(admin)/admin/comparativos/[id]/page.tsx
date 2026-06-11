@@ -1,6 +1,6 @@
 import { notFound } from "next/navigation";
 import { ComparisonForm } from "@/components/admin/comparison-form";
-import { AdminHeader, Field, inputClass, textareaClass } from "@/components/admin/ui";
+import { AdminHeader, Field, FormError, inputClass, textareaClass } from "@/components/admin/ui";
 import { Button } from "@/components/ui/button";
 import { db } from "@/lib/db";
 import {
@@ -10,10 +10,13 @@ import {
 
 export default async function EditComparison({
   params,
+  searchParams,
 }: {
   params: Promise<{ id: string }>;
+  searchParams: Promise<{ error?: string }>;
 }) {
   const { id } = await params;
+  const { error } = await searchParams;
   const [comparison, products] = await Promise.all([
     db.comparison.findUnique({
       where: { id },
@@ -34,6 +37,9 @@ export default async function EditComparison({
         title="Editar comparativo"
         action={{ label: "Ver no site", href: `/comparar/${comparison.slug}` }}
       />
+      {error === "slug" ? (
+        <FormError message="Já existe um comparativo com esse slug. Use um título/slug diferente." />
+      ) : null}
       <ComparisonForm comparison={comparison} />
 
       <section className="mt-12">

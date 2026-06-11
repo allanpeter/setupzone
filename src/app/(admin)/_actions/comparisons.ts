@@ -6,6 +6,7 @@ import { z } from "zod";
 import { requireAdmin } from "@/lib/auth-guard";
 import { db } from "@/lib/db";
 import { slugify } from "@/lib/slug";
+import { isUniqueViolation, slugTakenRedirect } from "./_shared";
 
 const lines = (raw?: string) =>
   (raw ?? "").split("\n").map((l) => l.trim()).filter(Boolean);
@@ -33,11 +34,18 @@ export async function saveComparison(formData: FormData) {
   };
 
   let comparisonId = data.id;
-  if (comparisonId) {
-    await db.comparison.update({ where: { id: comparisonId }, data: base });
-  } else {
-    const created = await db.comparison.create({ data: base });
-    comparisonId = created.id;
+  try {
+    if (comparisonId) {
+      await db.comparison.update({ where: { id: comparisonId }, data: base });
+    } else {
+      const created = await db.comparison.create({ data: base });
+      comparisonId = created.id;
+    }
+  } catch (e) {
+    if (isUniqueViolation(e)) {
+      slugTakenRedirect(data.id ? `/admin/comparativos/${data.id}` : "/admin/comparativos/novo");
+    }
+    throw e;
   }
   revalidatePath("/admin/comparativos");
   revalidatePath(`/comparar/${slug}`);

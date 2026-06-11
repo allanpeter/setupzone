@@ -6,6 +6,7 @@ import { z } from "zod";
 import { requireAdmin } from "@/lib/auth-guard";
 import { db } from "@/lib/db";
 import { slugify } from "@/lib/slug";
+import { isUniqueViolation, slugTakenRedirect } from "./_shared";
 
 const collectionSchema = z.object({
   id: z.string().optional(),
@@ -32,11 +33,18 @@ export async function saveCollection(formData: FormData) {
   };
 
   let collectionId = data.id;
-  if (collectionId) {
-    await db.collection.update({ where: { id: collectionId }, data: base });
-  } else {
-    const created = await db.collection.create({ data: base });
-    collectionId = created.id;
+  try {
+    if (collectionId) {
+      await db.collection.update({ where: { id: collectionId }, data: base });
+    } else {
+      const created = await db.collection.create({ data: base });
+      collectionId = created.id;
+    }
+  } catch (e) {
+    if (isUniqueViolation(e)) {
+      slugTakenRedirect(data.id ? `/admin/colecoes/${data.id}` : "/admin/colecoes");
+    }
+    throw e;
   }
   revalidatePath("/admin/colecoes");
   revalidatePath("/");

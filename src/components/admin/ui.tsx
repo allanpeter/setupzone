@@ -46,6 +46,15 @@ export function Field({
   );
 }
 
+export function FormError({ message }: { message?: string }) {
+  if (!message) return null;
+  return (
+    <div className="mb-6 rounded-sticker border border-destructive/40 bg-destructive/10 px-4 py-3 text-sm font-medium text-destructive">
+      {message}
+    </div>
+  );
+}
+
 export const inputClass =
   "h-9 w-full rounded-md border border-border bg-card px-3 text-sm text-foreground outline-none focus:border-primary";
 export const textareaClass =

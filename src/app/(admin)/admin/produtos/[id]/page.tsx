@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { ProductForm } from "@/components/admin/product-form";
-import { AdminHeader, Field, inputClass } from "@/components/admin/ui";
+import { AdminHeader, Field, FormError, inputClass } from "@/components/admin/ui";
 import { Button } from "@/components/ui/button";
 import { db } from "@/lib/db";
 import { formatBRL } from "@/lib/format";
@@ -9,10 +9,13 @@ import { deleteOffer, saveOffer } from "../../../_actions/products";
 
 export default async function EditProduct({
   params,
+  searchParams,
 }: {
   params: Promise<{ id: string }>;
+  searchParams: Promise<{ error?: string }>;
 }) {
   const { id } = await params;
+  const { error } = await searchParams;
   const [product, brands, categories, stores] = await Promise.all([
     db.product.findUnique({
       where: { id },
@@ -38,6 +41,10 @@ export default async function EditProduct({
         title="Editar produto"
         action={{ label: "Ver no site", href: `/produtos/${product.slug}` }}
       />
+
+      {error === "slug" ? (
+        <FormError message="Já existe um produto com esse slug. Use um nome/slug diferente." />
+      ) : null}
 
       <ProductForm product={product} brands={brands} categories={categories} />
 

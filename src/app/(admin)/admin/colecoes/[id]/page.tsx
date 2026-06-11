@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { AdminHeader, Field, inputClass } from "@/components/admin/ui";
+import { AdminHeader, Field, FormError, inputClass } from "@/components/admin/ui";
 import { Button } from "@/components/ui/button";
 import { db } from "@/lib/db";
 import {
@@ -20,10 +20,13 @@ const KINDS = [
 
 export default async function EditCollection({
   params,
+  searchParams,
 }: {
   params: Promise<{ id: string }>;
+  searchParams: Promise<{ error?: string }>;
 }) {
   const { id } = await params;
+  const { error } = await searchParams;
   const [collection, products, builds] = await Promise.all([
     db.collection.findUnique({
       where: { id },
@@ -45,6 +48,10 @@ export default async function EditCollection({
   return (
     <div>
       <AdminHeader title="Editar coleção" />
+
+      {error === "slug" ? (
+        <FormError message="Já existe uma coleção com esse slug. Use um título/slug diferente." />
+      ) : null}
 
       <form action={saveCollection} className="grid gap-4 rounded-card border border-border bg-card p-5 sm:grid-cols-2">
         <input type="hidden" name="id" value={collection.id} />

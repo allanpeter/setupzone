@@ -1,16 +1,19 @@
 import { notFound } from "next/navigation";
 import { BuildForm } from "@/components/admin/build-form";
-import { AdminHeader, Field, inputClass } from "@/components/admin/ui";
+import { AdminHeader, Field, FormError, inputClass } from "@/components/admin/ui";
 import { Button } from "@/components/ui/button";
 import { db } from "@/lib/db";
 import { addBuildItem, deleteBuildItem } from "../../../_actions/builds";
 
 export default async function EditBuild({
   params,
+  searchParams,
 }: {
   params: Promise<{ id: string }>;
+  searchParams: Promise<{ error?: string }>;
 }) {
   const { id } = await params;
+  const { error } = await searchParams;
   const [build, products] = await Promise.all([
     db.build.findUnique({
       where: { id },
@@ -31,6 +34,9 @@ export default async function EditBuild({
         title="Editar montagem"
         action={{ label: "Ver no site", href: `/montagens/${build.slug}` }}
       />
+      {error === "slug" ? (
+        <FormError message="Já existe uma montagem com esse slug. Use um título/slug diferente." />
+      ) : null}
       <BuildForm build={build} />
 
       <section className="mt-12">

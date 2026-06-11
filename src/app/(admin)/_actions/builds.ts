@@ -6,6 +6,7 @@ import { z } from "zod";
 import { requireAdmin } from "@/lib/auth-guard";
 import { db } from "@/lib/db";
 import { slugify } from "@/lib/slug";
+import { isUniqueViolation, slugTakenRedirect } from "./_shared";
 
 const lines = (raw?: string) =>
   (raw ?? "").split("\n").map((l) => l.trim()).filter(Boolean);
@@ -45,11 +46,18 @@ export async function saveBuild(formData: FormData) {
   };
 
   let buildId = data.id;
-  if (buildId) {
-    await db.build.update({ where: { id: buildId }, data: base });
-  } else {
-    const created = await db.build.create({ data: base });
-    buildId = created.id;
+  try {
+    if (buildId) {
+      await db.build.update({ where: { id: buildId }, data: base });
+    } else {
+      const created = await db.build.create({ data: base });
+      buildId = created.id;
+    }
+  } catch (e) {
+    if (isUniqueViolation(e)) {
+      slugTakenRedirect(data.id ? `/admin/montagens/${data.id}` : "/admin/montagens/novo");
+    }
+    throw e;
   }
   revalidatePath("/admin/montagens");
   revalidatePath(`/montagens/${slug}`);

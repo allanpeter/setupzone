@@ -7,6 +7,7 @@ import { requireAdmin } from "@/lib/auth-guard";
 import { db } from "@/lib/db";
 import type { ProductSpec } from "@/lib/format";
 import { slugify } from "@/lib/slug";
+import { isUniqueViolation, slugTakenRedirect } from "./_shared";
 
 /** Parse "Label: Value" lines into spec objects. */
 function parseSpecs(raw: string): ProductSpec[] {
@@ -68,16 +69,23 @@ export async function saveProduct(formData: FormData) {
   };
 
   let productId = data.id;
-  if (productId) {
-    await db.product.update({
-      where: { id: productId },
-      data: { ...base, categories: { set: categoryIds.map((id) => ({ id })) } },
-    });
-  } else {
-    const created = await db.product.create({
-      data: { ...base, categories: { connect: categoryIds.map((id) => ({ id })) } },
-    });
-    productId = created.id;
+  try {
+    if (productId) {
+      await db.product.update({
+        where: { id: productId },
+        data: { ...base, categories: { set: categoryIds.map((id) => ({ id })) } },
+      });
+    } else {
+      const created = await db.product.create({
+        data: { ...base, categories: { connect: categoryIds.map((id) => ({ id })) } },
+      });
+      productId = created.id;
+    }
+  } catch (e) {
+    if (isUniqueViolation(e)) {
+      slugTakenRedirect(data.id ? `/admin/produtos/${data.id}` : "/admin/produtos/novo");
+    }
+    throw e;
   }
 
   // Cover image (single primary asset).
