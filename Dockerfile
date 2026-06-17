@@ -56,9 +56,15 @@ COPY --from=migrator --chown=nextjs:nodejs /migrator/node_modules /migrate/node_
 COPY --from=build --chown=nextjs:nodejs /app/prisma /migrate/prisma
 COPY --from=build --chown=nextjs:nodejs /app/prisma.config.ts /migrate/prisma.config.ts
 
+# Entrypoint: roda `migrate deploy` (de /migrate) e sobe o server, no container
+# NOVO a cada start. Substitui o "Pre-deployment Command" do Coolify, que executa
+# no container ANTIGO (sem /migrate) — remova-o no painel.
+COPY docker-entrypoint.sh /usr/local/bin/docker-entrypoint.sh
+RUN chmod +x /usr/local/bin/docker-entrypoint.sh
+
 USER nextjs
 EXPOSE 3000
 ENV PORT=3000
 ENV HOSTNAME=0.0.0.0
 
-CMD ["node", "server.js"]
+CMD ["/usr/local/bin/docker-entrypoint.sh"]
