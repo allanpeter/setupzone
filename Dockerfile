@@ -41,18 +41,20 @@ ENV NODE_ENV=production
 ENV NEXT_TELEMETRY_DISABLED=1
 RUN addgroup -g 1001 -S nodejs && adduser -S nextjs -u 1001
 
-# Prisma toolchain first, so the app's own traced deps win on any overlap when
-# the standalone node_modules is copied on top.
-COPY --from=migrator --chown=nextjs:nodejs /migrator/node_modules ./node_modules
-
-# Next.js standalone output
+# Next.js standalone output. Brings its own traced node_modules into /app — which
+# is exactly why the Prisma CLI must NOT live here: copying the standalone on top
+# of a /app/node_modules/prisma shadows @prisma/engines and breaks `migrate deploy`.
 COPY --from=build /app/public ./public
 COPY --from=build --chown=nextjs:nodejs /app/.next/standalone ./
 COPY --from=build --chown=nextjs:nodejs /app/.next/static ./.next/static
 
-# Prisma schema + config + migrations for `migrate deploy` at release time.
-COPY --from=build --chown=nextjs:nodejs /app/prisma ./prisma
-COPY --from=build --chown=nextjs:nodejs /app/prisma.config.ts ./prisma.config.ts
+# Prisma migrator toolchain in an ISOLATED dir, untouched by the standalone copy.
+# Coolify "Pre-deployment Command":
+#   cd /migrate && node_modules/.bin/prisma migrate deploy
+# prisma.config.ts resolves prisma/{schema,migrations} relative to CWD (/migrate).
+COPY --from=migrator --chown=nextjs:nodejs /migrator/node_modules /migrate/node_modules
+COPY --from=build --chown=nextjs:nodejs /app/prisma /migrate/prisma
+COPY --from=build --chown=nextjs:nodejs /app/prisma.config.ts /migrate/prisma.config.ts
 
 USER nextjs
 EXPOSE 3000
