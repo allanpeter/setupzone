@@ -36,6 +36,20 @@ enum SeoEntityType {
   PAGE
 }
 
+// Build complexity, shown as a badge on montagens.
+enum BuildDifficulty {
+  INICIANTE
+  INTERMEDIARIO
+  AVANCADO
+}
+
+// Editorial "Vale a pena?" verdict on a product.
+enum ProductVerdict {
+  VALE
+  NAO_VALE
+  DEPENDE
+}
+
 // Curated discovery shelves / feeds.
 enum CollectionKind {
   SHELF // generic themed shelf on the home feed
@@ -191,6 +205,14 @@ model Product {
   status          ContentStatus @default(DRAFT)
   isFeatured      Boolean       @default(false)
   isTrending      Boolean       @default(false)
+  // Editorial fields (authority positioning — "explicado por quem usa").
+  audienceFor      String?      // "Para quem serve"
+  audienceNotFor   String?      // "Para quem não serve"
+  pros             String[]     @default([]) // Pontos positivos
+  cons             String[]     @default([]) // Pontos negativos
+  editorialOpinion String?      // "Nossa opinião"
+  verdict          ProductVerdict? // "Vale a pena?" — Sim / Não / Depende
+  verdictNote      String?      // justificativa curta do veredito
   // Denormalised "most wanted" signal (incremented by ProductVote / "Quero").
   voteCount       Int           @default(0)
   // Denormalised "best current price" for cheap sorting/listing (in BRL cents).
@@ -211,6 +233,15 @@ model Product {
   clicks         AffiliateClick[]
   votes          ProductVote[]
   collectionItems CollectionItem[]
+
+  // Curated "Alternativas" — self many-to-many (directional). Fallback: same-category related.
+  alternatives    Product[]     @relation("ProductAlternatives")
+  alternativeOf   Product[]     @relation("ProductAlternatives")
+  // Reverse relations for build-item alternative slots.
+  budgetForItems  BuildItem[]   @relation("BuildItemBudgetAlt")
+  premiumForItems BuildItem[]   @relation("BuildItemPremiumAlt")
+  // Reverse relation for blog "produtos relacionados".
+  relatedInPosts  BlogPost[]    @relation("PostProducts")
 
   /// Full-text search vector (generated column, managed by SQL migration).
   searchVector Unsupported("tsvector")?
@@ -297,6 +328,12 @@ model Build {
   budgetCents     Int?          // target budget in BRL cents
   status          ContentStatus @default(DRAFT)
   isFeatured      Boolean       @default(false)
+  // Editorial fields.
+  objective       String?          // "Objetivo" — para que serve a montagem
+  difficulty      BuildDifficulty? // dificuldade
+  observations    String?          // "Observações"
+  conclusion      String?          // "Conclusão"
+  category        String?          // rótulo editorial: Homelab / Setup Dev / IA Local…
   // Curated pros/cons and alternatives notes.
   pros            String[]      @default([])
   cons            String[]      @default([])
@@ -306,6 +343,8 @@ model Build {
 
   items BuildItem[]
   collectionItems CollectionItem[]
+  // Reverse relation for blog "montagens relacionadas".
+  relatedInPosts  BlogPost[]    @relation("PostBuilds")
 
   /// Full-text search vector (generated column, managed by SQL migration).
   searchVector Unsupported("tsvector")?
@@ -327,6 +366,11 @@ model BuildItem {
   quantity     Int     @default(1)
   note         String?
   displayOrder Int     @default(0)
+  // Optional cheaper / premium swap for this part.
+  budgetAlternativeId  String?
+  budgetAlternative    Product? @relation("BuildItemBudgetAlt", fields: [budgetAlternativeId], references: [id], onDelete: SetNull)
+  premiumAlternativeId String?
+  premiumAlternative   Product? @relation("BuildItemPremiumAlt", fields: [premiumAlternativeId], references: [id], onDelete: SetNull)
 
   @@unique([buildId, productId])
   @@index([buildId])
@@ -419,6 +463,9 @@ model BlogPost {
   publishedAt   DateTime?
 
   tags BlogTag[] @relation("BlogPostTags")
+  // Internal linking — conteúdo relacionado (autoridade + SEO).
+  relatedProducts Product[] @relation("PostProducts")
+  relatedBuilds   Build[]   @relation("PostBuilds")
 
   /// Full-text search vector (generated column, managed by SQL migration).
   searchVector Unsupported("tsvector")?

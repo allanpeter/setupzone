@@ -1,18 +1,39 @@
+import { Check, Minus, ThumbsDown, ThumbsUp, X } from "lucide-react";
 import type { Metadata } from "next";
 import Image from "next/image";
 import Link from "next/link";
 import { notFound } from "next/navigation";
+import { Breadcrumbs } from "@/components/breadcrumbs";
 import { JsonLd } from "@/components/json-ld";
 import { ProductCardGrid } from "@/components/product-card";
 import { Container } from "@/components/section";
 import { StoreBuyList, type StoreOffer } from "@/components/store-buy-list";
 import { asSpecs, formatBRL } from "@/lib/format";
-import { breadcrumbJsonLd, productJsonLd } from "@/lib/jsonld";
+import { productJsonLd } from "@/lib/jsonld";
 import {
   getPriceStats,
   getProductBySlug,
   getRelatedProducts,
 } from "@/lib/queries/products";
+import { cn } from "@/lib/utils";
+
+const VERDICT = {
+  VALE: {
+    label: "Vale a pena",
+    icon: ThumbsUp,
+    className: "text-lime-400 border-lime-400/30 bg-lime-400/10",
+  },
+  NAO_VALE: {
+    label: "Não vale a pena",
+    icon: ThumbsDown,
+    className: "text-destructive border-destructive/30 bg-destructive/10",
+  },
+  DEPENDE: {
+    label: "Depende",
+    icon: Minus,
+    className: "text-accent border-accent/30 bg-accent/10",
+  },
+} as const;
 
 export async function generateMetadata({
   params,
@@ -46,9 +67,15 @@ export default async function ProductPage({
   const cover = product.media[0];
   const categorySlugs = product.categories.map((c) => c.slug);
   const [related, priceStats] = await Promise.all([
-    getRelatedProducts(product.id, categorySlugs),
+    product.alternatives.length === 0
+      ? getRelatedProducts(product.id, categorySlugs)
+      : Promise.resolve([]),
     getPriceStats(product.id),
   ]);
+
+  // "Alternativas": curadas se houver, senão produtos relacionados da categoria.
+  const alternatives =
+    product.alternatives.length > 0 ? product.alternatives : related;
 
   // Build store offers: join current price + affiliate link per store.
   const lowest = product.lowestPriceCents;
@@ -64,42 +91,35 @@ export default async function ProductPage({
   });
   offers.sort((a, b) => (a.priceCents ?? Infinity) - (b.priceCents ?? Infinity));
 
+  const verdict = product.verdict ? VERDICT[product.verdict] : null;
+
   return (
     <Container className="py-10">
       <JsonLd
-        data={[
-          productJsonLd({
-            name: product.name,
-            slug: product.slug,
-            description: product.shortDescription,
-            image: cover?.url,
-            brand: product.brand?.name,
-            priceCents: product.lowestPriceCents,
-            offerCount: offers.length,
-          }),
-          breadcrumbJsonLd([
-            { name: "Produtos", path: "/produtos" },
-            { name: product.name, path: `/produtos/${product.slug}` },
-          ]),
+        data={productJsonLd({
+          name: product.name,
+          slug: product.slug,
+          description: product.shortDescription,
+          image: cover?.url,
+          brand: product.brand?.name,
+          priceCents: product.lowestPriceCents,
+          offerCount: offers.length,
+        })}
+      />
+      <Breadcrumbs
+        items={[
+          { name: "Produtos", path: "/produtos" },
+          ...(product.categories[0]
+            ? [
+                {
+                  name: product.categories[0].name,
+                  path: `/produtos?categoria=${product.categories[0].slug}`,
+                },
+              ]
+            : []),
+          { name: product.name, path: `/produtos/${product.slug}` },
         ]}
       />
-      {/* Breadcrumb */}
-      <nav className="mb-6 flex flex-wrap items-center gap-1.5 text-sm text-muted-foreground">
-        <Link href="/produtos" className="hover:text-foreground">
-          Produtos
-        </Link>
-        {product.categories[0] ? (
-          <>
-            <span>/</span>
-            <Link
-              href={`/produtos?categoria=${product.categories[0].slug}`}
-              className="hover:text-foreground"
-            >
-              {product.categories[0].name}
-            </Link>
-          </>
-        ) : null}
-      </nav>
 
       <div className="grid gap-10 lg:grid-cols-2">
         {/* Gallery */}
@@ -142,6 +162,26 @@ export default async function ProductPage({
             </p>
           ) : null}
 
+          {/* Verdict badge (sinal rápido) */}
+          {verdict ? (
+            <div className="mt-5 flex flex-wrap items-center gap-3">
+              <span
+                className={cn(
+                  "inline-flex items-center gap-1.5 rounded-pill border px-3 py-1.5 text-sm font-semibold",
+                  verdict.className,
+                )}
+              >
+                <verdict.icon className="size-4" />
+                {verdict.label}
+              </span>
+              {product.verdictNote ? (
+                <span className="text-sm text-muted-foreground">
+                  {product.verdictNote}
+                </span>
+              ) : null}
+            </div>
+          ) : null}
+
           {/* Categories */}
           {product.categories.length > 0 ? (
             <div className="mt-4 flex flex-wrap gap-2">
@@ -157,22 +197,63 @@ export default async function ProductPage({
             </div>
           ) : null}
 
-          {/* Buy */}
-          <div className="mt-6">
-            <h2 className="t-eyebrow mb-3">comprar em</h2>
-            <StoreBuyList productSlug={product.slug} offers={offers} />
-            {priceStats.lowestEverCents != null ? (
-              <p className="mt-3 text-xs text-muted-foreground">
-                Menor preço registrado:{" "}
-                <span className="t-num text-accent">
-                  {formatBRL(priceStats.lowestEverCents)}
-                </span>
-                {priceStats.points > 1 ? ` · ${priceStats.points} registros` : null}
-              </p>
-            ) : null}
-          </div>
+          {/* Para quem serve / não serve */}
+          {(product.audienceFor || product.audienceNotFor) && (
+            <div className="mt-6 grid gap-3 sm:grid-cols-2">
+              {product.audienceFor ? (
+                <div className="rounded-card border border-border bg-card p-4">
+                  <h2 className="t-eyebrow mb-2 text-lime-400">para quem serve</h2>
+                  <p className="text-sm leading-6 text-muted-foreground">
+                    {product.audienceFor}
+                  </p>
+                </div>
+              ) : null}
+              {product.audienceNotFor ? (
+                <div className="rounded-card border border-border bg-card p-4">
+                  <h2 className="t-eyebrow mb-2 text-destructive">
+                    para quem não serve
+                  </h2>
+                  <p className="text-sm leading-6 text-muted-foreground">
+                    {product.audienceNotFor}
+                  </p>
+                </div>
+              ) : null}
+            </div>
+          )}
         </div>
       </div>
+
+      {/* Pontos positivos / negativos */}
+      {(product.pros.length > 0 || product.cons.length > 0) && (
+        <section className="mt-14 grid gap-4 sm:grid-cols-2">
+          {product.pros.length > 0 ? (
+            <div className="rounded-sticker border border-border bg-card p-5">
+              <h2 className="t-eyebrow mb-3 text-primary">pontos positivos</h2>
+              <ul className="space-y-2">
+                {product.pros.map((p) => (
+                  <li key={p} className="flex gap-2 text-sm">
+                    <Check className="mt-0.5 size-4 shrink-0 text-primary" />
+                    {p}
+                  </li>
+                ))}
+              </ul>
+            </div>
+          ) : null}
+          {product.cons.length > 0 ? (
+            <div className="rounded-sticker border border-border bg-card p-5">
+              <h2 className="t-eyebrow mb-3 text-destructive">pontos negativos</h2>
+              <ul className="space-y-2">
+                {product.cons.map((c) => (
+                  <li key={c} className="flex gap-2 text-sm">
+                    <X className="mt-0.5 size-4 shrink-0 text-destructive" />
+                    {c}
+                  </li>
+                ))}
+              </ul>
+            </div>
+          ) : null}
+        </section>
+      )}
 
       {/* Specs */}
       {specs.length > 0 ? (
@@ -199,17 +280,63 @@ export default async function ProductPage({
       {product.description ? (
         <section className="mt-14 max-w-3xl">
           <h2 className="t-h2 mb-4">Sobre o produto</h2>
+          <div className="prose-sz text-muted-foreground">{product.description}</div>
+        </section>
+      ) : null}
+
+      {/* Nossa opinião */}
+      {product.editorialOpinion ? (
+        <section className="mt-14 max-w-3xl">
+          <h2 className="t-h2 mb-4">Nossa opinião</h2>
           <div className="prose-sz text-muted-foreground">
-            {product.description}
+            {product.editorialOpinion}
           </div>
         </section>
       ) : null}
 
-      {/* Related */}
-      {related.length > 0 ? (
+      {/* Vale a pena? */}
+      {verdict ? (
+        <section className="mt-14 max-w-3xl">
+          <h2 className="t-h2 mb-4">Vale a pena?</h2>
+          <div
+            className={cn(
+              "flex items-start gap-3 rounded-sticker border p-5",
+              verdict.className,
+            )}
+          >
+            <verdict.icon className="mt-0.5 size-5 shrink-0" />
+            <div>
+              <p className="font-display text-lg font-bold">{verdict.label}</p>
+              {product.verdictNote ? (
+                <p className="mt-1 text-sm text-muted-foreground">
+                  {product.verdictNote}
+                </p>
+              ) : null}
+            </div>
+          </div>
+        </section>
+      ) : null}
+
+      {/* Comprar em (após o editorial) */}
+      <section className="mt-14 max-w-3xl">
+        <h2 className="t-h2 mb-4">Onde comprar</h2>
+        <StoreBuyList productSlug={product.slug} offers={offers} />
+        {priceStats.lowestEverCents != null ? (
+          <p className="mt-3 text-xs text-muted-foreground">
+            Menor preço registrado:{" "}
+            <span className="t-num text-accent">
+              {formatBRL(priceStats.lowestEverCents)}
+            </span>
+            {priceStats.points > 1 ? ` · ${priceStats.points} registros` : null}
+          </p>
+        ) : null}
+      </section>
+
+      {/* Alternativas */}
+      {alternatives.length > 0 ? (
         <section className="mt-16">
-          <h2 className="t-h2 mb-6">Produtos relacionados</h2>
-          <ProductCardGrid products={related} />
+          <h2 className="t-h2 mb-6">Alternativas</h2>
+          <ProductCardGrid products={alternatives} />
         </section>
       ) : null}
     </Container>

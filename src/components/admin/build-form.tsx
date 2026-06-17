@@ -14,6 +14,11 @@ type Build = {
   isFeatured: boolean;
   pros: string[];
   cons: string[];
+  objective: string | null;
+  difficulty: string | null;
+  observations: string | null;
+  conclusion: string | null;
+  category: string | null;
 };
 
 export function BuildForm({ build }: { build?: Build }) {
@@ -38,6 +43,10 @@ export function BuildForm({ build }: { build?: Build }) {
         <textarea name="description" rows={3} defaultValue={build?.description ?? ""} className={textareaClass} />
       </Field>
 
+      <Field label="Objetivo" hint="Para que serve esta montagem">
+        <textarea name="objective" rows={2} defaultValue={build?.objective ?? ""} className={textareaClass} />
+      </Field>
+
       <div className="grid gap-4 sm:grid-cols-3">
         <Field label="Status">
           <select name="status" defaultValue={build?.status ?? "DRAFT"} className={inputClass}>
@@ -46,6 +55,20 @@ export function BuildForm({ build }: { build?: Build }) {
             <option value="ARCHIVED">Arquivado</option>
           </select>
         </Field>
+        <Field label="Dificuldade">
+          <select name="difficulty" defaultValue={build?.difficulty ?? ""} className={inputClass}>
+            <option value="">—</option>
+            <option value="INICIANTE">Iniciante</option>
+            <option value="INTERMEDIARIO">Intermediário</option>
+            <option value="AVANCADO">Avançado</option>
+          </select>
+        </Field>
+        <Field label="Categoria" hint="ex.: Homelab, Setup Dev, IA Local">
+          <input name="category" defaultValue={build?.category ?? ""} className={inputClass} />
+        </Field>
+      </div>
+
+      <div className="grid gap-4 sm:grid-cols-2">
         <Field label="Orçamento (R$)">
           <input name="budgetReais" defaultValue={build?.budgetCents ? (build.budgetCents / 100).toString() : ""} className={inputClass} />
         </Field>
@@ -62,6 +85,14 @@ export function BuildForm({ build }: { build?: Build }) {
           <textarea name="cons" rows={4} defaultValue={build?.cons.join("\n")} className={textareaClass} />
         </Field>
       </div>
+
+      <Field label="Observações">
+        <textarea name="observations" rows={3} defaultValue={build?.observations ?? ""} className={textareaClass} />
+      </Field>
+
+      <Field label="Conclusão">
+        <textarea name="conclusion" rows={3} defaultValue={build?.conclusion ?? ""} className={textareaClass} />
+      </Field>
 
       <label className="inline-flex items-center gap-2 text-sm">
         <input type="checkbox" name="isFeatured" defaultChecked={build?.isFeatured} className="accent-primary" />

@@ -16,7 +16,7 @@ export default async function EditProduct({
 }) {
   const { id } = await params;
   const { error } = await searchParams;
-  const [product, brands, categories, stores] = await Promise.all([
+  const [product, brands, categories, stores, otherProducts] = await Promise.all([
     db.product.findUnique({
       where: { id },
       include: {
@@ -24,11 +24,17 @@ export default async function EditProduct({
         media: { orderBy: { displayOrder: "asc" } },
         affiliateLinks: { include: { store: true } },
         prices: { where: { isCurrent: true } },
+        alternatives: { select: { id: true } },
       },
     }),
     db.brand.findMany({ orderBy: { name: "asc" }, select: { id: true, name: true } }),
     db.category.findMany({ orderBy: { displayOrder: "asc" }, select: { id: true, name: true } }),
     db.store.findMany({ orderBy: { displayOrder: "asc" } }),
+    db.product.findMany({
+      where: { id: { not: id } },
+      orderBy: { name: "asc" },
+      select: { id: true, name: true },
+    }),
   ]);
 
   if (!product) notFound();
@@ -46,7 +52,12 @@ export default async function EditProduct({
         <FormError message="Já existe um produto com esse slug. Use um nome/slug diferente." />
       ) : null}
 
-      <ProductForm product={product} brands={brands} categories={categories} />
+      <ProductForm
+        product={product}
+        brands={brands}
+        categories={categories}
+        products={otherProducts}
+      />
 
       {/* Offers (affiliate links + current price per store) */}
       <section className="mt-12">

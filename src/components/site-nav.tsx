@@ -69,7 +69,7 @@ export function SiteNav() {
             className="hidden sm:inline-flex"
             render={<Link href="/montagens" />}
           >
-            Explorar montagens
+            Ver Setups
           </Button>
 
           {/* Mobile menu */}

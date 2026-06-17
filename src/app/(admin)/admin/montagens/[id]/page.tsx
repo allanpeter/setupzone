@@ -64,7 +64,7 @@ export default async function EditBuild({
 
         <form
           action={addBuildItem}
-          className="grid items-end gap-3 rounded-sticker border border-border bg-card p-5 sm:grid-cols-[2fr_1fr_auto]"
+          className="grid items-end gap-3 rounded-sticker border border-border bg-card p-5 sm:grid-cols-2"
         >
           <input type="hidden" name="buildId" value={build.id} />
           <Field label="Produto">
@@ -79,9 +79,31 @@ export default async function EditBuild({
           <Field label="Função" hint="ex.: CPU, Fonte">
             <input name="role" className={inputClass} />
           </Field>
-          <Button type="submit" variant="brand" nativeButton>
-            Adicionar
-          </Button>
+          <Field label="Alternativa mais barata">
+            <select name="budgetAlternativeId" className={inputClass}>
+              <option value="">—</option>
+              {products.map((p) => (
+                <option key={p.id} value={p.id}>
+                  {p.name}
+                </option>
+              ))}
+            </select>
+          </Field>
+          <Field label="Alternativa premium">
+            <select name="premiumAlternativeId" className={inputClass}>
+              <option value="">—</option>
+              {products.map((p) => (
+                <option key={p.id} value={p.id}>
+                  {p.name}
+                </option>
+              ))}
+            </select>
+          </Field>
+          <div className="sm:col-span-2">
+            <Button type="submit" variant="brand" nativeButton>
+              Adicionar
+            </Button>
+          </div>
         </form>
       </section>
     </div>

@@ -8,17 +8,21 @@ export default async function NewPost({
   searchParams: Promise<{ error?: string }>;
 }) {
   const { error } = await searchParams;
-  const categories = await db.blogCategory.findMany({
-    orderBy: { name: "asc" },
-    select: { id: true, name: true },
-  });
+  const [categories, products, builds] = await Promise.all([
+    db.blogCategory.findMany({
+      orderBy: { name: "asc" },
+      select: { id: true, name: true },
+    }),
+    db.product.findMany({ orderBy: { name: "asc" }, select: { id: true, name: true } }),
+    db.build.findMany({ orderBy: { title: "asc" }, select: { id: true, title: true } }),
+  ]);
   return (
     <div>
       <AdminHeader title="Novo artigo" />
       {error === "slug" ? (
         <FormError message="Já existe um artigo com esse slug. Use um título/slug diferente." />
       ) : null}
-      <PostForm categories={categories} />
+      <PostForm categories={categories} products={products} builds={builds} />
     </div>
   );
 }

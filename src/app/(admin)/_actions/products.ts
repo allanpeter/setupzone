@@ -34,6 +34,10 @@ async function recomputeLowest(productId: string) {
   await db.product.update({ where: { id: productId }, data: { lowestPriceCents: lowest } });
 }
 
+/** Split a textarea into trimmed, non-empty lines. */
+const lines = (raw?: string) =>
+  (raw ?? "").split("\n").map((l) => l.trim()).filter(Boolean);
+
 const productSchema = z.object({
   id: z.string().optional(),
   name: z.string().min(1),
@@ -44,12 +48,23 @@ const productSchema = z.object({
   brandId: z.string().optional(),
   coverImageUrl: z.string().optional(),
   specs: z.string().optional(),
+  audienceFor: z.string().optional(),
+  audienceNotFor: z.string().optional(),
+  pros: z.string().optional(),
+  cons: z.string().optional(),
+  editorialOpinion: z.string().optional(),
+  verdict: z.enum(["VALE", "NAO_VALE", "DEPENDE"]).or(z.literal("")).optional(),
+  verdictNote: z.string().optional(),
 });
 
 export async function saveProduct(formData: FormData) {
   await requireAdmin();
   const data = productSchema.parse(Object.fromEntries(formData));
   const categoryIds = formData.getAll("categoryIds").map(String).filter(Boolean);
+  const alternativeIds = formData
+    .getAll("alternativeIds")
+    .map(String)
+    .filter((id) => Boolean(id) && id !== data.id);
   const isFeatured = formData.get("isFeatured") === "on";
   const isTrending = formData.get("isTrending") === "on";
   const slug = data.slug?.trim() ? slugify(data.slug) : slugify(data.name);
@@ -64,6 +79,13 @@ export async function saveProduct(formData: FormData) {
     isTrending,
     brandId: data.brandId || null,
     specs: parseSpecs(data.specs ?? ""),
+    audienceFor: data.audienceFor || null,
+    audienceNotFor: data.audienceNotFor || null,
+    pros: lines(data.pros),
+    cons: lines(data.cons),
+    editorialOpinion: data.editorialOpinion || null,
+    verdict: data.verdict ? data.verdict : null,
+    verdictNote: data.verdictNote || null,
     publishedAt:
       data.status === "PUBLISHED" ? new Date() : null,
   };
@@ -73,11 +95,19 @@ export async function saveProduct(formData: FormData) {
     if (productId) {
       await db.product.update({
         where: { id: productId },
-        data: { ...base, categories: { set: categoryIds.map((id) => ({ id })) } },
+        data: {
+          ...base,
+          categories: { set: categoryIds.map((id) => ({ id })) },
+          alternatives: { set: alternativeIds.map((id) => ({ id })) },
+        },
       });
     } else {
       const created = await db.product.create({
-        data: { ...base, categories: { connect: categoryIds.map((id) => ({ id })) } },
+        data: {
+          ...base,
+          categories: { connect: categoryIds.map((id) => ({ id })) },
+          alternatives: { connect: alternativeIds.map((id) => ({ id })) },
+        },
       });
       productId = created.id;
     }

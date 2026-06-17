@@ -22,6 +22,14 @@ const buildSchema = z.object({
   status: z.enum(["DRAFT", "PUBLISHED", "ARCHIVED"]),
   pros: z.string().optional(),
   cons: z.string().optional(),
+  objective: z.string().optional(),
+  difficulty: z
+    .enum(["INICIANTE", "INTERMEDIARIO", "AVANCADO"])
+    .or(z.literal(""))
+    .optional(),
+  observations: z.string().optional(),
+  conclusion: z.string().optional(),
+  category: z.string().optional(),
 });
 
 export async function saveBuild(formData: FormData) {
@@ -42,6 +50,11 @@ export async function saveBuild(formData: FormData) {
     isFeatured,
     pros: lines(data.pros),
     cons: lines(data.cons),
+    objective: data.objective || null,
+    difficulty: data.difficulty ? data.difficulty : null,
+    observations: data.observations || null,
+    conclusion: data.conclusion || null,
+    category: data.category?.trim() || null,
     publishedAt: data.status === "PUBLISHED" ? new Date() : null,
   };
 
@@ -75,11 +88,22 @@ export async function addBuildItem(formData: FormData) {
   const buildId = String(formData.get("buildId"));
   const productId = String(formData.get("productId"));
   const role = String(formData.get("role") ?? "") || null;
+  const budgetAlternativeId =
+    String(formData.get("budgetAlternativeId") ?? "") || null;
+  const premiumAlternativeId =
+    String(formData.get("premiumAlternativeId") ?? "") || null;
   const count = await db.buildItem.count({ where: { buildId } });
   await db.buildItem.upsert({
     where: { buildId_productId: { buildId, productId } },
-    update: { role },
-    create: { buildId, productId, role, displayOrder: count },
+    update: { role, budgetAlternativeId, premiumAlternativeId },
+    create: {
+      buildId,
+      productId,
+      role,
+      budgetAlternativeId,
+      premiumAlternativeId,
+      displayOrder: count,
+    },
   });
   revalidatePath(`/admin/montagens/${buildId}`);
 }

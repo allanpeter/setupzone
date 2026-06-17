@@ -25,6 +25,14 @@ export async function savePost(formData: FormData) {
   await requireAdmin();
   const data = postSchema.parse(Object.fromEntries(formData));
   const slug = data.slug?.trim() ? slugify(data.slug) : slugify(data.title);
+  const relatedProductIds = formData
+    .getAll("relatedProductIds")
+    .map(String)
+    .filter(Boolean);
+  const relatedBuildIds = formData
+    .getAll("relatedBuildIds")
+    .map(String)
+    .filter(Boolean);
 
   // Upsert tags from a comma-separated list.
   const tagNames = (data.tags ?? "")
@@ -60,11 +68,21 @@ export async function savePost(formData: FormData) {
     if (postId) {
       await db.blogPost.update({
         where: { id: postId },
-        data: { ...base, tags: { set: tagIds } },
+        data: {
+          ...base,
+          tags: { set: tagIds },
+          relatedProducts: { set: relatedProductIds.map((id) => ({ id })) },
+          relatedBuilds: { set: relatedBuildIds.map((id) => ({ id })) },
+        },
       });
     } else {
       const created = await db.blogPost.create({
-        data: { ...base, tags: { connect: tagIds } },
+        data: {
+          ...base,
+          tags: { connect: tagIds },
+          relatedProducts: { connect: relatedProductIds.map((id) => ({ id })) },
+          relatedBuilds: { connect: relatedBuildIds.map((id) => ({ id })) },
+        },
       });
       postId = created.id;
     }

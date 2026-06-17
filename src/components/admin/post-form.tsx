@@ -13,15 +13,23 @@ type Post = {
   categoryId: string | null;
   readingMinutes: number | null;
   tags: { name: string }[];
+  relatedProducts?: { id: string }[];
+  relatedBuilds?: { id: string }[];
 };
 
 export function PostForm({
   post,
   categories,
+  products = [],
+  builds = [],
 }: {
   post?: Post;
   categories: { id: string; name: string }[];
+  products?: { id: string; name: string }[];
+  builds?: { id: string; title: string }[];
 }) {
+  const selectedProducts = new Set(post?.relatedProducts?.map((p) => p.id) ?? []);
+  const selectedBuilds = new Set(post?.relatedBuilds?.map((b) => b.id) ?? []);
   return (
     <form action={savePost} className="space-y-6">
       {post ? <input type="hidden" name="id" value={post.id} /> : null}
@@ -73,6 +81,60 @@ export function PostForm({
       <Field label="Conteúdo (HTML)" hint="Aceita HTML. Um editor rico pode ser plugado aqui.">
         <textarea name="content" rows={14} defaultValue={post?.content} className={`${textareaClass} font-mono text-xs`} />
       </Field>
+
+      {/* ── Conteúdo relacionado (internal linking) ─────────────── */}
+      {products.length > 0 || builds.length > 0 ? (
+        <div className="grid gap-6 rounded-sticker border border-border bg-card/40 p-5 sm:grid-cols-2">
+          {builds.length > 0 ? (
+            <fieldset className="space-y-2">
+              <legend className="text-sm font-medium text-foreground">
+                Montagens relacionadas
+              </legend>
+              <div className="flex max-h-48 flex-wrap gap-2 overflow-y-auto">
+                {builds.map((b) => (
+                  <label
+                    key={b.id}
+                    className="inline-flex items-center gap-2 rounded-pill border border-border bg-card px-3 py-1.5 text-sm has-[:checked]:border-primary has-[:checked]:bg-primary/10"
+                  >
+                    <input
+                      type="checkbox"
+                      name="relatedBuildIds"
+                      value={b.id}
+                      defaultChecked={selectedBuilds.has(b.id)}
+                      className="accent-primary"
+                    />
+                    {b.title}
+                  </label>
+                ))}
+              </div>
+            </fieldset>
+          ) : null}
+          {products.length > 0 ? (
+            <fieldset className="space-y-2">
+              <legend className="text-sm font-medium text-foreground">
+                Produtos citados
+              </legend>
+              <div className="flex max-h-48 flex-wrap gap-2 overflow-y-auto">
+                {products.map((p) => (
+                  <label
+                    key={p.id}
+                    className="inline-flex items-center gap-2 rounded-pill border border-border bg-card px-3 py-1.5 text-sm has-[:checked]:border-primary has-[:checked]:bg-primary/10"
+                  >
+                    <input
+                      type="checkbox"
+                      name="relatedProductIds"
+                      value={p.id}
+                      defaultChecked={selectedProducts.has(p.id)}
+                      className="accent-primary"
+                    />
+                    {p.name}
+                  </label>
+                ))}
+              </div>
+            </fieldset>
+          ) : null}
+        </div>
+      ) : null}
 
       <Button type="submit" variant="brand" nativeButton>
         {post ? "Salvar artigo" : "Criar artigo"}

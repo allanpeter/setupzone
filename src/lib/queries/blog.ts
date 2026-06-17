@@ -1,5 +1,7 @@
 import { cache } from "react";
 import { db } from "@/lib/db";
+import { productCardSelect } from "@/lib/queries/products";
+import { buildCardSelect } from "@/lib/queries/builds";
 
 export const postCardSelect = {
   id: true,
@@ -31,6 +33,16 @@ export const getPostBySlug = cache((slug: string) =>
       category: true,
       tags: true,
       author: { select: { name: true, image: true } },
+      relatedProducts: {
+        where: { status: "PUBLISHED" },
+        select: productCardSelect,
+        take: 4,
+      },
+      relatedBuilds: {
+        where: { status: "PUBLISHED" },
+        select: buildCardSelect,
+        take: 3,
+      },
     },
   }),
 );

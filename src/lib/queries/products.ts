@@ -136,6 +136,12 @@ export const getProductBySlug = cache((slug: string) =>
         include: { store: true },
         orderBy: { priceCents: "asc" },
       },
+      // Curated alternatives (editorial). Only published ones are shown.
+      alternatives: {
+        where: { status: "PUBLISHED" },
+        select: productCardSelect,
+        take: 4,
+      },
     },
   }),
 );

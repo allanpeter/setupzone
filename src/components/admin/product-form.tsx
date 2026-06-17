@@ -14,20 +14,32 @@ type Product = {
   isTrending: boolean;
   brandId: string | null;
   specs: unknown;
+  audienceFor: string | null;
+  audienceNotFor: string | null;
+  pros: string[];
+  cons: string[];
+  editorialOpinion: string | null;
+  verdict: string | null;
+  verdictNote: string | null;
   categories: { id: string }[];
   media: { url: string }[];
+  alternatives?: { id: string }[];
 };
 
 export function ProductForm({
   product,
   brands,
   categories,
+  products = [],
 }: {
   product?: Product;
   brands: { id: string; name: string }[];
   categories: { id: string; name: string }[];
+  /** Other products, for the "Alternativas" multiselect. */
+  products?: { id: string; name: string }[];
 }) {
   const selectedCats = new Set(product?.categories.map((c) => c.id) ?? []);
+  const selectedAlts = new Set(product?.alternatives?.map((a) => a.id) ?? []);
   const specsText = asSpecs(product?.specs)
     .map((s) => `${s.label}: ${s.value}`)
     .join("\n");
@@ -111,6 +123,70 @@ export function ProductForm({
       <Field label="Especificações" hint='Uma por linha, no formato "Rótulo: Valor"'>
         <textarea name="specs" rows={5} defaultValue={specsText} placeholder="CPU: Ryzen 5 5600&#10;RAM: 16GB DDR4" className={textareaClass} />
       </Field>
+
+      {/* ── Conteúdo editorial ──────────────────────────────────── */}
+      <div className="space-y-6 rounded-sticker border border-border bg-card/40 p-5">
+        <p className="t-eyebrow">conteúdo editorial</p>
+
+        <div className="grid gap-4 sm:grid-cols-2">
+          <Field label="Para quem serve">
+            <textarea name="audienceFor" rows={3} defaultValue={product?.audienceFor ?? ""} className={textareaClass} />
+          </Field>
+          <Field label="Para quem não serve">
+            <textarea name="audienceNotFor" rows={3} defaultValue={product?.audienceNotFor ?? ""} className={textareaClass} />
+          </Field>
+        </div>
+
+        <div className="grid gap-4 sm:grid-cols-2">
+          <Field label="Pontos positivos" hint="Um por linha">
+            <textarea name="pros" rows={4} defaultValue={product?.pros.join("\n")} className={textareaClass} />
+          </Field>
+          <Field label="Pontos negativos" hint="Um por linha">
+            <textarea name="cons" rows={4} defaultValue={product?.cons.join("\n")} className={textareaClass} />
+          </Field>
+        </div>
+
+        <Field label="Nossa opinião">
+          <textarea name="editorialOpinion" rows={4} defaultValue={product?.editorialOpinion ?? ""} className={textareaClass} />
+        </Field>
+
+        <div className="grid gap-4 sm:grid-cols-2">
+          <Field label="Vale a pena?">
+            <select name="verdict" defaultValue={product?.verdict ?? ""} className={inputClass}>
+              <option value="">Sem veredito</option>
+              <option value="VALE">Vale a pena</option>
+              <option value="NAO_VALE">Não vale a pena</option>
+              <option value="DEPENDE">Depende</option>
+            </select>
+          </Field>
+          <Field label="Justificativa do veredito">
+            <input name="verdictNote" defaultValue={product?.verdictNote ?? ""} className={inputClass} />
+          </Field>
+        </div>
+
+        {products.length > 0 ? (
+          <fieldset className="space-y-2">
+            <legend className="text-sm font-medium text-foreground">Alternativas</legend>
+            <div className="flex max-h-48 flex-wrap gap-2 overflow-y-auto">
+              {products.map((p) => (
+                <label
+                  key={p.id}
+                  className="inline-flex items-center gap-2 rounded-pill border border-border bg-card px-3 py-1.5 text-sm has-[:checked]:border-primary has-[:checked]:bg-primary/10"
+                >
+                  <input
+                    type="checkbox"
+                    name="alternativeIds"
+                    value={p.id}
+                    defaultChecked={selectedAlts.has(p.id)}
+                    className="accent-primary"
+                  />
+                  {p.name}
+                </label>
+              ))}
+            </div>
+          </fieldset>
+        ) : null}
+      </div>
 
       <Button type="submit" variant="brand" nativeButton>
         {product ? "Salvar produto" : "Criar produto"}

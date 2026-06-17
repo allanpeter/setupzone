@@ -12,9 +12,18 @@ export default async function EditPost({
 }) {
   const { id } = await params;
   const { error } = await searchParams;
-  const [post, categories] = await Promise.all([
-    db.blogPost.findUnique({ where: { id }, include: { tags: true } }),
+  const [post, categories, products, builds] = await Promise.all([
+    db.blogPost.findUnique({
+      where: { id },
+      include: {
+        tags: true,
+        relatedProducts: { select: { id: true } },
+        relatedBuilds: { select: { id: true } },
+      },
+    }),
     db.blogCategory.findMany({ orderBy: { name: "asc" }, select: { id: true, name: true } }),
+    db.product.findMany({ orderBy: { name: "asc" }, select: { id: true, name: true } }),
+    db.build.findMany({ orderBy: { title: "asc" }, select: { id: true, title: true } }),
   ]);
   if (!post) notFound();
 
@@ -27,7 +36,12 @@ export default async function EditPost({
       {error === "slug" ? (
         <FormError message="Já existe um artigo com esse slug. Use um título/slug diferente." />
       ) : null}
-      <PostForm post={post} categories={categories} />
+      <PostForm
+        post={post}
+        categories={categories}
+        products={products}
+        builds={builds}
+      />
     </div>
   );
 }

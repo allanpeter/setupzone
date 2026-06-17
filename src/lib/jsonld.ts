@@ -61,6 +61,31 @@ export function articleJsonLd(input: {
   };
 }
 
+export function buildJsonLd(input: {
+  title: string;
+  slug: string;
+  summary?: string | null;
+  image?: string | null;
+  estimatedTotalCents?: number | null;
+  items: { name: string; slug: string }[];
+}) {
+  return {
+    "@context": "https://schema.org",
+    "@type": "ItemList",
+    name: input.title,
+    description: input.summary ?? undefined,
+    image: input.image ?? undefined,
+    url: `${siteConfig.url}/montagens/${input.slug}`,
+    numberOfItems: input.items.length,
+    itemListElement: input.items.map((item, i) => ({
+      "@type": "ListItem",
+      position: i + 1,
+      name: item.name,
+      url: `${siteConfig.url}/produtos/${item.slug}`,
+    })),
+  };
+}
+
 export function breadcrumbJsonLd(items: { name: string; path: string }[]) {
   return {
     "@context": "https://schema.org",
